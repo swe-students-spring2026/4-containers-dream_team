@@ -1,5 +1,6 @@
 """
-This module connects to the Google GenAI API to evaluate and rank jokes.
+This module connects to the Google GenAI API to evaluate
+if a piece of text has humor and then ranks how funny it is.
 """
 
 import os
@@ -39,7 +40,7 @@ def generate_classification(text):
     classification = "".join(filter(str.isdigit, response.text))
     classification = int(classification)
 
-    if classification != 0 and classification != 1:
+    if classification not in (0, 1):
         raise OutOfRangeError
 
     return classification
