@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: joke-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    
+  machine-learning-client:
+    build:
+      context: ./machine-learning-client
+      container-name: joke-ml-client
+      ports:
+        - "5001:5001"
+      depends_on:
+        - mongodb
+  
+  web-app:
+    build:
+      context: ./web-app
+    container_name: joke-web-app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+      - machine-learning-client
+  
+  volumes:
+    mongo-data:
