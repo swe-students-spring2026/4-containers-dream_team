@@ -5,8 +5,10 @@ flask = "*"
 pymongo = "*"
 assemblyai = "*"
 tomli = "*"
+pytest = "*"
 
 [dev-packages]
+rapidfuzz = "*"
 
 [requires]
 python_version = "3.10"
