@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AppName</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+      --text: #111;
+      --line: #7a7a7a;
+      --muted: #555;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: grid;
+      place-items: start center;
+      padding:
+        max(0.9rem, env(safe-area-inset-top))
+        max(0.9rem, env(safe-area-inset-right))
+        max(1rem, env(safe-area-inset-bottom))
+        max(0.9rem, env(safe-area-inset-left));
+      background: var(--bg);
+      color: var(--text);
+      font: 400 clamp(0.95rem, 2vw, 1rem) / 1.35 "Avenir Next", "Trebuchet MS", sans-serif;
+    }
+    main {
+      width: min(100%, 22.25rem);
+      min-height: calc(100dvh - max(1.8rem, env(safe-area-inset-top)) - max(2rem, env(safe-area-inset-bottom)));
+      padding: 2rem 0 1rem;
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 1rem;
+    }
+    h1 {
+      margin: calc(1.25rem + 100px) 0 0;
+      padding-bottom: 9.375rem;
+      font-size: clamp(2.4rem, 10vw, 3.1rem);
+      font-weight: 500;
+      letter-spacing: -0.05em;
+    }
+    .name-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 0.9rem;
+    }
+    .name-note {
+      width: 100%;
+      min-height: 0.85rem;
+      margin: -0.6rem 0 0;
+      color: #8b1e1e;
+      font-size: 0.78rem;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .name-note[data-visible="true"] {
+      opacity: 1;
+    }
+    .name-row label {
+      font-size: clamp(1.1rem, 4.8vw, 1.45rem);
+    }
+    .prompt {
+      font-size: calc(clamp(1.1rem, 4.8vw, 1.45rem) + 5px);
+    }
+    input,
+    button {
+      font: inherit;
+    }
+    input {
+      min-width: 0;
+      height: 2.5rem;
+      padding: 0 0.85rem;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+    }
+    input:focus-visible,
+    button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
+    }
+    .prompt {
+      margin: 0;
+      text-align: center;
+    }
+    .submission-summary {
+      max-height: 0;
+      margin: 0;
+      overflow: hidden;
+      text-align: center;
+      font-size: clamp(1.15rem, 4vw, 1.45rem);
+      line-height: 1.08;
+      opacity: 0;
+      transform: translateY(-0.3rem);
+      transition: opacity 0.18s ease, transform 0.18s ease, max-height 0.18s ease, margin 0.18s ease;
+    }
+    .submission-summary[data-visible="true"] {
+      max-height: 3rem;
+      margin: -0.1rem 0 0;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .mic {
+      width: 5.3rem;
+      aspect-ratio: 1;
+      border: 2px solid var(--line);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .mic:hover {
+      transform: scale(1.02);
+    }
+    .mic[aria-pressed="true"] {
+      background: var(--text);
+      color: #fff;
+      border-color: var(--text);
+    }
+    .mic svg {
+      width: 2rem;
+      height: 2rem;
+      fill: currentColor;
+    }
+    .audio-panel {
+      width: 100%;
+      max-height: 0;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.65rem;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(-0.35rem);
+      transition: opacity 0.18s ease, transform 0.18s ease, max-height 0.18s ease;
+    }
+    .audio-panel[data-ready="true"] {
+      max-height: 2.5rem;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .play-toggle,
+    .submit {
+      border: 0;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      padding: 0;
+    }
+    .play-toggle {
+      width: 0.92rem;
+      height: 0.92rem;
+      display: grid;
+      place-items: center;
+    }
+    .play-toggle .play {
+      width: 0;
+      height: 0;
+      border-top: 0.4rem solid transparent;
+      border-bottom: 0.4rem solid transparent;
+      border-left: 0.68rem solid currentColor;
+      margin-left: 0.08rem;
+    }
+    .play-toggle .pause,
+    .play-toggle[aria-pressed="false"] .pause,
+    .play-toggle[aria-pressed="true"] .play {
+      display: none;
+    }
+    .play-toggle[aria-pressed="true"] .pause {
+      display: block;
+      width: 0.68rem;
+      height: 0.68rem;
+      background: currentColor;
+    }
+    .audio-visual,
+    .leaderboard-wave {
+      height: 0.82rem;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #dfdfdf;
+      position: relative;
+    }
+    .audio-visual::before,
+    .leaderboard-wave::before,
+    .audio-visual::after,
+    .leaderboard-wave::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+    }
+    .audio-visual::before,
+    .leaderboard-wave::before {
+      inset: 0.14rem 0.38rem;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.08)),
+        repeating-linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.3) 0 0.28rem,
+          transparent 0.28rem 0.62rem
+        );
+      mix-blend-mode: multiply;
+    }
+    .audio-visual::after,
+    .leaderboard-wave::after {
+      inset: 0.08rem;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 999px;
+      opacity: 0.7;
+    }
+    .audio-visual::before,
+    .leaderboard-wave::before {
+      transform: translateX(0);
+    }
+    .audio-panel[data-playing="true"] .audio-visual::before {
+      animation: glide 1.2s linear infinite;
+    }
+    .submit {
+      padding: 0.18rem 0.56rem 0.24rem;
+      background: var(--text);
+      color: #fff;
+      line-height: 1;
+      font-size: 0.95rem;
+    }
+    @keyframes glide {
+      to { transform: translateX(0.7rem); }
+    }
+    .leaderboard {
+      width: 100%;
+      display: grid;
+      gap: 0.25rem;
+    }
+    .leaderboard-toggle {
+      justify-self: center;
+      border: 0;
+      border-bottom: 2px solid var(--line);
+      background: transparent;
+      padding: 0 1.35rem 0.08rem 0;
+      font-size: clamp(1.3rem, 5vw, 1.65rem);
+      color: var(--text);
+      cursor: pointer;
+      position: relative;
+    }
+    .leaderboard-toggle::after {
+      content: "";
+      position: absolute;
+      right: 0.2rem;
+      top: 42%;
+      width: 0.62rem;
+      height: 0.62rem;
+      border-right: 2px solid var(--text);
+      border-bottom: 2px solid var(--text);
+      transform: translateY(-50%) rotate(45deg);
+      pointer-events: none;
+      transition: transform 0.15s ease;
+    }
+    .leaderboard-toggle[aria-expanded="true"]::after {
+      transform: translateY(-15%) rotate(225deg);
+    }
+    .leaderboard-panel {
+      border: 2px solid var(--line);
+      background: #fff;
+      display: none;
+      max-height: min(16rem, 38dvh);
+      overflow-y: auto;
+    }
+    .leaderboard-panel[data-open="true"] {
+      display: block;
+    }
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: auto auto 1fr;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.65rem 0.7rem;
+      border-top: 2px solid var(--line);
+    }
+    .leaderboard-row:first-child {
+      border-top: 0;
+    }
+    .leaderboard-name {
+      min-width: 3.4rem;
+      font-size: 0.95rem;
+    }
+    .leaderboard-play {
+      width: 0.92rem;
+      height: 0.92rem;
+      display: grid;
+      place-items: center;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      padding: 0;
+    }
+    .leaderboard-play .play {
+      width: 0;
+      height: 0;
+      border-top: 0.38rem solid transparent;
+      border-bottom: 0.38rem solid transparent;
+      border-left: 0.62rem solid currentColor;
+      margin-left: 0.08rem;
+    }
+    .leaderboard-play .pause,
+    .leaderboard-play[aria-pressed="false"] .pause,
+    .leaderboard-play[aria-pressed="true"] .play {
+      display: none;
+    }
+    .leaderboard-play[aria-pressed="true"] .pause {
+      display: block;
+      width: 0.62rem;
+      height: 0.62rem;
+      background: currentColor;
+    }
+    .leaderboard-wave {
+      height: 0.9rem;
+    }
+    .leaderboard-row[data-playing="true"] .leaderboard-wave::before {
+      animation: glide 1.2s linear infinite;
+    }
+    .leaderboard-empty {
+      padding: 1rem 0.85rem;
+      text-align: center;
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    @media (max-width: 430px), (max-height: 900px) {
+      main {
+        width: min(100%, 21.5rem);
+        padding-top: 1.5rem;
+        gap: 0.9rem;
+      }
+      h1 {
+        font-size: clamp(2.15rem, 9.5vw, 2.8rem);
+      }
+      .name-row {
+        gap: 0.6rem;
+      }
+      .name-row label {
+        font-size: 1.08rem;
+      }
+      .submission-summary {
+        font-size: 1.1rem;
+      }
+      .mic {
+        width: 4.9rem;
+      }
+      .mic svg {
+        width: 1.85rem;
+        height: 1.85rem;
+      }
+      .leaderboard-toggle {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>AppName</h1>
+    <div class="name-row">
+      <label for="name">Name:</label>
+      <input id="name" name="name" type="text" autocomplete="name">
+    </div>
+    <p id="nameNote" class="name-note" data-visible="false" aria-live="polite"></p>
+    <p id="prompt" class="prompt">Tell a joke!</p>
+    <button id="mic" class="mic" type="button" aria-pressed="false" aria-label="Start recording">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a1 1 0 0 1 2 0 7 7 0 0 1-6 6.92V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-2.08A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z"/>
+      </svg>
+    </button>
+    <p id="submissionSummary" class="submission-summary" data-visible="false" aria-live="polite">
+      Your joke was ranked <span id="rankValue">{rank}</span><br>of <span id="totalValue">{total}</span> jokes
+    </p>
+    <div id="audioPanel" class="audio-panel" data-ready="false" data-playing="false">
+      <button id="playToggle" class="play-toggle" type="button" aria-pressed="false" aria-label="Play audio">
+        <span class="play" aria-hidden="true"></span>
+        <span class="pause" aria-hidden="true"></span>
+      </button>
+      <div class="audio-visual" aria-hidden="true"></div>
+      <button id="submitButton" class="submit" type="button">Submit</button>
+    </div>
+    <section class="leaderboard" aria-label="Top jokes">
+      <button id="leaderboardToggle" class="leaderboard-toggle" type="button" aria-expanded="false" aria-controls="leaderboardPanel">
+        Top 10 of all time
+      </button>
+      <div id="leaderboardPanel" class="leaderboard-panel" data-open="false"></div>
+    </section>
+  </main>
+  <script>
+    const nameInput = document.getElementById("name");
+    const nameNote = document.getElementById("nameNote");
+    const mic = document.getElementById("mic");
+    const prompt = document.getElementById("prompt");
+    const submissionSummary = document.getElementById("submissionSummary");
+    const audioPanel = document.getElementById("audioPanel");
+    const playToggle = document.getElementById("playToggle");
+    const submitButton = document.getElementById("submitButton");
+    const leaderboardToggle = document.getElementById("leaderboardToggle");
+    const leaderboardPanel = document.getElementById("leaderboardPanel");
+    let recording = false, hasClip = false, playing = false, hasSubmitted = false;
+
+    const setNameNote = text => {
+      nameNote.textContent = text;
+      nameNote.dataset.visible = !!text;
+    };
+    const syncPrompt = name => {
+      const lead = hasSubmitted ? "Tell another joke" : "Tell a joke";
+      prompt.textContent = name ? `${lead} ${name}!` : `${lead}!`;
+    };
+    const setRecording = on => {
+      mic.setAttribute("aria-pressed", on);
+      mic.setAttribute("aria-label", on ? "Stop recording" : "Start recording");
+    };
+    const setPlaying = on => {
+      playing = on;
+      playToggle.setAttribute("aria-pressed", on ? "true" : "false");
+      playToggle.setAttribute("aria-label", on ? "Pause audio" : "Play audio");
+      audioPanel.dataset.playing = on ? "true" : "false";
+    };
+    const renderLeaderboard = () => {
+      leaderboardPanel.innerHTML = `
+        <div class="leaderboard-empty">
+          Top-ranked jokes will appear here once the backend provides the leaderboard data.
+        </div>
+      `;
+    };
+    const setLeaderboardOpen = on => {
+      leaderboardToggle.setAttribute("aria-expanded", on ? "true" : "false");
+      leaderboardPanel.dataset.open = on ? "true" : "false";
+    };
+    const setSubmissionSummary = on => {
+      submissionSummary.dataset.visible = on ? "true" : "false";
+    };
+
+    nameInput.addEventListener("input", () => {
+      syncPrompt(nameInput.value.trim());
+      setNameNote("");
+      if (!recording) setSubmissionSummary(false);
+    });
+
+    mic.addEventListener("click", () => {
+      if (!recording) setSubmissionSummary(false);
+      recording = !recording;
+      if (!recording) {
+        hasClip = true;
+      }
+      audioPanel.dataset.ready = !recording && hasClip;
+      setPlaying(false);
+      setRecording(recording);
+    });
+
+    playToggle.addEventListener("click", () => hasClip && setPlaying(!playing));
+    submitButton.addEventListener("click", () => {
+      const name = nameInput.value.trim();
+      if (!name) {
+        setNameNote("Enter a unique username before submitting.");
+        nameInput.focus();
+        return;
+      }
+      hasSubmitted = true;
+      hasClip = false;
+      recording = false;
+      setNameNote("");
+      setPlaying(false);
+      setRecording(false);
+      setSubmissionSummary(true);
+      audioPanel.dataset.ready = "false";
+      syncPrompt(name);
+    });
+    leaderboardToggle.addEventListener("click", () => {
+      setLeaderboardOpen(leaderboardPanel.dataset.open !== "true");
+    });
+    leaderboardPanel.addEventListener("click", event => {
+      const button = event.target.closest(".leaderboard-play");
+      if (!button) return;
+      const next = button.getAttribute("aria-pressed") !== "true";
+      leaderboardPanel.querySelectorAll(".leaderboard-row").forEach(row => {
+        row.dataset.playing = "false";
+        row.querySelector(".leaderboard-play").setAttribute("aria-pressed", "false");
+        row.querySelector(".leaderboard-play").setAttribute("aria-label", "Play ranked joke");
+      });
+      if (next) {
+        button.setAttribute("aria-pressed", "true");
+        button.setAttribute("aria-label", "Pause ranked joke");
+        button.closest(".leaderboard-row").dataset.playing = "true";
+      }
+    });
+
+    renderLeaderboard();
+  </script>
+</body>
+</html>
