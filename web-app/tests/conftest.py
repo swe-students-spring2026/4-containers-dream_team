@@ -5,7 +5,8 @@ without running the actual server.
 """
 
 import pytest
-from app import create_app # pylint: disable=import-error
+from app import create_app  # pylint: disable=import-error
+
 
 @pytest.fixture
 def joke_ranking_service():
@@ -15,6 +16,7 @@ def joke_ranking_service():
     service = create_app()
     service.config["TESTING"] = True
     return service
+
 
 @pytest.fixture
 def client(app):

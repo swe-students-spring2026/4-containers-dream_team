@@ -4,11 +4,14 @@ This service determines whether input text contains humor and assigns a funnines
 """
 
 from flask import Flask, request, jsonify, render_template
-from machine_learning_client.joke_ranking import analyze_text # pylint: disable=import-error
+from machine_learning_client.joke_ranking import (
+    analyze_text,
+)  # pylint: disable=import-error
 
 app = Flask(__name__)
 
 # @TODO initialize db
+
 
 @app.route("/")
 def dashboard():
@@ -46,17 +49,14 @@ def add_analysis():
     # Build database record (to be saved later)
     record = {
         "text": text,
-        "username": text, # @TODO replace with real username field
+        "username": text,  # @TODO replace with real username field
         "classification": classification,
-        "funniness_score": score
+        "funniness_score": score,
     }
 
     # @TODO save to db
 
-    return jsonify({
-        "status": "success",
-        "data": record
-    }), 201
+    return jsonify({"status": "success", "data": record}), 201
 
 
 @app.route("/api/analysis", methods=["GET"])
@@ -72,9 +72,7 @@ def get_analysis():
     # Placeholder response until DB is implemented
     results = []
 
-    return jsonify({
-        "results": results
-    }), 200
+    return jsonify({"results": results}), 200
 
 
 if __name__ == "__main__":

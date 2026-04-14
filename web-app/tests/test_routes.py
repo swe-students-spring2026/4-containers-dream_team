@@ -5,6 +5,7 @@ This module verifies that core endpoints respond with expected
 HTTP status codes.
 """
 
+
 def test_dashboard(client):
     """Test that the dashboard endpoint returns HTTP 200."""
     res = client.get("/")
