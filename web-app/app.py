@@ -4,7 +4,7 @@ This service determines whether input text contains humor and assigns a funnines
 """
 
 from flask import Flask, request, jsonify, render_template
-from machine_learning_client.joke_ranking import analyze_text
+from machine_learning_client.joke_ranking import analyze_text # pylint: disable=import-error
 
 app = Flask(__name__)
 
@@ -51,7 +51,7 @@ def add_analysis():
         "funniness_score": score
     }
 
-    # @TODO save to db 
+    # @TODO save to db
 
     return jsonify({
         "status": "success",

@@ -5,21 +5,16 @@ without running the actual server.
 """
 
 import pytest
-from app import create_app
+from app import create_app # pylint: disable=import-error
 
 @pytest.fixture
-def app():
+def joke_ranking_service():
     """
     Create and configure a new Flask app instance for testing.
-
-    This ensures each test runs with a fresh application context.
     """
-    app = create_app()
-
-    # @TODO configure test settings here (e.g. testing database)
-    app.config["TESTING"] = True
-
-    return app
+    service = create_app()
+    service.config["TESTING"] = True
+    return service
 
 @pytest.fixture
 def client(app):
@@ -32,4 +27,3 @@ def client(app):
             response = client.get("/")
     """
     return app.test_client()
-
