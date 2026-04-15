@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 pylint = "*"
 black = "*"
+google-genai = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
