@@ -8,8 +8,11 @@ pylint = "*"
 black = "*"
 flask = "*"
 pytest = "*"
+requests = "*"
 
 [dev-packages]
+tomli = "*"
+typing-extensions = "*"
 
 [requires]
 python_version = "3.10"
