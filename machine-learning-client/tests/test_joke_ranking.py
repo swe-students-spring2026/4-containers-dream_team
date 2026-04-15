@@ -58,7 +58,8 @@ def test_generate_score_valid(mock_generate):
 
 @patch("joke_ranking.client.models.generate_content")
 def test_generate_score_out_of_range_high(mock_generate):
-    "testing for joke ranking return a score outside of the valid range, should raise an OutOfRange error"
+    """testing for joke ranking return a score outside of the valid range,
+    should raise an OutOfRange error"""
     mock_response = MagicMock()
     mock_response.text = "101"
     mock_generate.return_value = mock_response
@@ -81,7 +82,8 @@ def test_generate_score_no_digits(mock_generate):
 @patch("joke_ranking.generate_score")
 @patch("joke_ranking.generate_classification")
 def test_analyze_text_with_humor(mock_classify, mock_score):
-    "testing the analyze_text function recieving a funny piece of text, should return a tuple containing (1, score)"
+    """testing the analyze_text function recieving a funny piece of text,
+    should return a tuple containing (1, score)"""
     mock_classify.return_value = 1
     mock_score.return_value = 90
 
@@ -95,7 +97,8 @@ def test_analyze_text_with_humor(mock_classify, mock_score):
 @patch("joke_ranking.generate_score")
 @patch("joke_ranking.generate_classification")
 def test_analyze_text_humorless(mock_classify, mock_score):
-    "testing the analyze_text function recieving an unfunny piece of text, should return a tuple containing (0, -1)"
+    """testing the analyze_text function recieving an unfunny piece of text,
+    should return a tuple containing (0, -1)"""
     mock_classify.return_value = 0
 
     result = analyze_text("Boring text")
