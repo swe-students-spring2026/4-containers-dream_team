@@ -7,6 +7,16 @@ from time import time
 from flask import Flask, jsonify, request, send_from_directory
 from pymongo import DESCENDING, MongoClient, errors
 import requests
+from pymongo import MongoClient
+import os
+
+mongo_url = os.getenv("MONGO_URI") or "mongodb://mongodb:27017"
+
+
+# get the collection
+client = MongoClient(mongo_url)
+db = client["joke_database"]
+collection = db["jokes"]
 
 app = Flask(__name__)
 ROOT = Path(__file__).resolve().parent
@@ -28,46 +38,6 @@ MONGO_URIS = tuple(
 )
 _mongo_client = None
 _collection = None
-
-
-def get_collection():
-    """Connect to MongoDB and return the jokes collection."""
-
-    global _mongo_client, _collection
-    if _collection is not None:
-        return _collection
-    for uri in MONGO_URIS:
-        try:
-            client = MongoClient(uri, serverSelectionTimeoutMS=1000)
-            client.admin.command("ping")
-            _mongo_client = client
-            _collection = client["joke_database"]["jokes"]
-            return _collection
-        except errors.PyMongoError:
-            continue
-    raise RuntimeError("database unavailable")
-
-
-def serialize_record(record):
-    """Convert a Mongo document into frontend-safe JSON."""
-
-    return {
-        "id": str(record["_id"]),
-        "text": record.get("text", ""),
-        "username": record.get("username", ""),
-        "classification": record.get("classification", -1),
-        "funniness_score": record.get("funniness_score", -1),
-        "created_at": record.get("created_at", 0),
-    }
-
-
-def sorted_results(collection):
-    """Return saved jokes ordered from funniest to least funny."""
-
-    cursor = collection.find().sort(
-        [("funniness_score", DESCENDING), ("created_at", DESCENDING)]
-    )
-    return [serialize_record(record) for record in cursor]
 
 
 @app.route("/")
@@ -155,19 +125,28 @@ def add_analysis():
         "classification": result["classification"],
         "funniness_score": result["score"],
     }
-    return jsonify({"status": "success", "data": record}), 200
+
+    collection.insert_one(record)
+
+    return jsonify({"status": "success", "data": record}), 201
 
 
 @app.route("/api/analysis", methods=["GET"])
 def get_analysis():
-    """Return saved joke submissions for the frontend leaderboard."""
+    """
+    Retrieve all stored analysis records.
 
-    try:
-        collection = get_collection()
-    except RuntimeError:
-        return jsonify({"error": "database unavailable"}), 500
-    results = sorted_results(collection)
-    return jsonify({"results": results}), 200
+    """
+
+    results = list(collection.find())
+
+    final_results = []
+
+    for r in results:
+        r["_id"] = str(r["_id"])
+        final_results.append(r)
+
+    return jsonify({"results": final_results}), 200
 
 
 if __name__ == "__main__":
