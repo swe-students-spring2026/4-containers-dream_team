@@ -12,7 +12,7 @@ services:
   machine-learning-client:
     build:
       context: ./machine-learning-client
-      container-name: joke-ml-client
+      container_name: joke-ml-client
       ports:
         - "5001:5001"
       depends_on:

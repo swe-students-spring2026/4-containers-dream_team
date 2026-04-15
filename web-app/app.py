@@ -4,9 +4,7 @@ This service determines whether input text contains humor and assigns a funnines
 """
 
 from flask import Flask, request, jsonify, render_template
-from machine_learning_client.joke_ranking import (
-    analyze_text,
-)  # pylint: disable=import-error
+import requests
 
 app = Flask(__name__)
 
@@ -29,29 +27,30 @@ def dashboard():
 @app.route("/api/analysis", methods=["POST"])
 def add_analysis():
     """
-    Accepts text input, runs ML analysis, and returns classification + score.
-
-    Expected JSON payload:
-    {
-        "text": "your input text here"
-    }
+    Accepts audio input, runs ML analysis, and returns classification + score.
     """
+    if "joke" not in request.files:
+        return jsonify({"error": "missing input"}), 400
+    joke = request.files["joke"]
 
-    data = request.get_json(force=True)
-    text = data.get("text")
+    # Run joke to machine-learning-client where it is analyzed
+    response = requests.post(
+        "http://machine-learning-client:5001/process", jokes={"joke": joke}, timeout=45
+    )
 
-    if not text:
-        return jsonify({"error": "missing text"}), 400
+    # check it ran correctly
+    if response.status_code != 200:
+        return jsonify({"error": "machine learning client failed"}), 500
 
-    # Run ML model analysis
-    classification, score = analyze_text(text)
+    # grab results from response
+    result = response.json()
 
     # Build database record (to be saved later)
     record = {
-        "text": text,
-        "username": text,  # @TODO replace with real username field
-        "classification": classification,
-        "funniness_score": score,
+        "text": result.text,
+        "username": result.text,  # @TODO replace with real username field
+        "classification": result.classification,
+        "funniness_score": result.score,
     }
 
     # @TODO save to db
