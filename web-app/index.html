@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AppName</title>
+  <title>FunnAI</title>
   <style>
     :root {
       color-scheme: light;
@@ -135,8 +135,8 @@
       width: 100%;
       max-height: 0;
       display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
+      grid-template-columns: 1fr auto;
+      align-items: start;
       gap: 0.65rem;
       overflow: hidden;
       opacity: 0;
@@ -144,11 +144,10 @@
       transition: opacity 0.18s ease, transform 0.18s ease, max-height 0.18s ease;
     }
     .audio-panel[data-ready="true"] {
-      max-height: 2.5rem;
+      max-height: 14rem;
       opacity: 1;
       transform: translateY(0);
     }
-    .play-toggle,
     .submit {
       border: 0;
       background: #fff;
@@ -156,73 +155,17 @@
       cursor: pointer;
       padding: 0;
     }
-    .play-toggle {
-      width: 0.92rem;
-      height: 0.92rem;
-      display: grid;
-      place-items: center;
-    }
-    .play-toggle .play {
-      width: 0;
-      height: 0;
-      border-top: 0.4rem solid transparent;
-      border-bottom: 0.4rem solid transparent;
-      border-left: 0.68rem solid currentColor;
-      margin-left: 0.08rem;
-    }
-    .play-toggle .pause,
-    .play-toggle[aria-pressed="false"] .pause,
-    .play-toggle[aria-pressed="true"] .play {
-      display: none;
-    }
-    .play-toggle[aria-pressed="true"] .pause {
-      display: block;
-      width: 0.68rem;
-      height: 0.68rem;
-      background: currentColor;
-    }
-    .audio-visual,
-    .leaderboard-wave {
-      height: 0.82rem;
-      border-radius: 999px;
-      overflow: hidden;
-      background: #dfdfdf;
-      position: relative;
-    }
-    .audio-visual::before,
-    .leaderboard-wave::before,
-    .audio-visual::after,
-    .leaderboard-wave::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-    }
-    .audio-visual::before,
-    .leaderboard-wave::before {
-      inset: 0.14rem 0.38rem;
-      border-radius: 999px;
-      background:
-        linear-gradient(90deg, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.08)),
-        repeating-linear-gradient(
-          90deg,
-          rgba(255, 255, 255, 0.3) 0 0.28rem,
-          transparent 0.28rem 0.62rem
-        );
-      mix-blend-mode: multiply;
-    }
-    .audio-visual::after,
-    .leaderboard-wave::after {
-      inset: 0.08rem;
-      border: 1px solid rgba(255, 255, 255, 0.55);
-      border-radius: 999px;
-      opacity: 0.7;
-    }
-    .audio-visual::before,
-    .leaderboard-wave::before {
-      transform: translateX(0);
-    }
-    .audio-panel[data-playing="true"] .audio-visual::before {
-      animation: glide 1.2s linear infinite;
+    .text-card {
+      width: 13.5rem;
+      min-height: 2.65rem;
+      padding: 0.65rem 0.75rem;
+      border: 2px solid var(--line);
+      background: #efefef;
+      color: var(--text);
+      text-align: left;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
     .submit {
       padding: 0.18rem 0.56rem 0.24rem;
@@ -231,8 +174,37 @@
       line-height: 1;
       font-size: 0.95rem;
     }
-    @keyframes glide {
-      to { transform: translateX(0.7rem); }
+    .panel-status {
+      width: 100%;
+      min-height: 0.8rem;
+      margin: -0.25rem 0 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: left;
+    }
+    .panel-feedback {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-height: 0.95rem;
+    }
+    .spinner {
+      width: 0.8rem;
+      height: 0.8rem;
+      border: 2px solid rgba(17, 17, 17, 0.18);
+      border-top-color: var(--text);
+      border-radius: 50%;
+      opacity: 0;
+      animation: spin 0.7s linear infinite;
+      transition: opacity 0.15s ease;
+    }
+    .spinner[data-visible="true"] {
+      opacity: 1;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
     .leaderboard {
       width: 100%;
@@ -278,8 +250,8 @@
     }
     .leaderboard-row {
       display: grid;
-      grid-template-columns: auto auto 1fr;
-      align-items: center;
+      grid-template-columns: auto 1fr;
+      align-items: start;
       gap: 0.45rem;
       padding: 0.65rem 0.7rem;
       border-top: 2px solid var(--line);
@@ -290,42 +262,7 @@
     .leaderboard-name {
       min-width: 3.4rem;
       font-size: 0.95rem;
-    }
-    .leaderboard-play {
-      width: 0.92rem;
-      height: 0.92rem;
-      display: grid;
-      place-items: center;
-      border: 0;
-      background: transparent;
-      color: var(--text);
-      cursor: pointer;
-      padding: 0;
-    }
-    .leaderboard-play .play {
-      width: 0;
-      height: 0;
-      border-top: 0.38rem solid transparent;
-      border-bottom: 0.38rem solid transparent;
-      border-left: 0.62rem solid currentColor;
-      margin-left: 0.08rem;
-    }
-    .leaderboard-play .pause,
-    .leaderboard-play[aria-pressed="false"] .pause,
-    .leaderboard-play[aria-pressed="true"] .play {
-      display: none;
-    }
-    .leaderboard-play[aria-pressed="true"] .pause {
-      display: block;
-      width: 0.62rem;
-      height: 0.62rem;
-      background: currentColor;
-    }
-    .leaderboard-wave {
-      height: 0.9rem;
-    }
-    .leaderboard-row[data-playing="true"] .leaderboard-wave::before {
-      animation: glide 1.2s linear infinite;
+      padding-top: 0.55rem;
     }
     .leaderboard-empty {
       padding: 1rem 0.85rem;
@@ -333,6 +270,9 @@
       font-size: 0.92rem;
       color: var(--muted);
       line-height: 1.35;
+    }
+    .leaderboard-text {
+      width: 12.9rem;
     }
     @media (max-width: 430px), (max-height: 900px) {
       main {
@@ -362,12 +302,18 @@
       .leaderboard-toggle {
         font-size: 1.2rem;
       }
+      .text-card {
+        width: 12.25rem;
+      }
+      .leaderboard-text {
+        width: 11.7rem;
+      }
     }
   </style>
 </head>
 <body>
   <main>
-    <h1>AppName</h1>
+    <h1>FunnAI</h1>
     <div class="name-row">
       <label for="name">Name:</label>
       <input id="name" name="name" type="text" autocomplete="name">
@@ -383,11 +329,13 @@
       Your joke was ranked <span id="rankValue">{rank}</span><br>of <span id="totalValue">{total}</span> jokes
     </p>
     <div id="audioPanel" class="audio-panel" data-ready="false" data-playing="false">
-      <button id="playToggle" class="play-toggle" type="button" aria-pressed="false" aria-label="Play audio">
-        <span class="play" aria-hidden="true"></span>
-        <span class="pause" aria-hidden="true"></span>
-      </button>
-      <div class="audio-visual" aria-hidden="true"></div>
+      <div>
+        <div id="transcriptCard" class="text-card" aria-live="polite"></div>
+        <div class="panel-feedback">
+          <span id="transcriptSpinner" class="spinner" data-visible="false" aria-hidden="true"></span>
+          <p id="panelStatus" class="panel-status"></p>
+        </div>
+      </div>
       <button id="submitButton" class="submit" type="button">Submit</button>
     </div>
     <section class="leaderboard" aria-label="Top jokes">
@@ -404,11 +352,19 @@
     const prompt = document.getElementById("prompt");
     const submissionSummary = document.getElementById("submissionSummary");
     const audioPanel = document.getElementById("audioPanel");
-    const playToggle = document.getElementById("playToggle");
+    const transcriptCard = document.getElementById("transcriptCard");
+    const transcriptSpinner = document.getElementById("transcriptSpinner");
+    const panelStatus = document.getElementById("panelStatus");
     const submitButton = document.getElementById("submitButton");
     const leaderboardToggle = document.getElementById("leaderboardToggle");
     const leaderboardPanel = document.getElementById("leaderboardPanel");
-    let recording = false, hasClip = false, playing = false, hasSubmitted = false;
+    const rankValue = document.getElementById("rankValue");
+    const totalValue = document.getElementById("totalValue");
+    let mediaRecorder, stream;
+    let recording = false, hasTranscript = false, hasSubmitted = false, transcript = "";
+    let transcribing = false;
+    let analysis = { classification: null, funniness_score: null };
+    let leaderboardResults = [];
 
     const setNameNote = text => {
       nameNote.textContent = text;
@@ -422,18 +378,40 @@
       mic.setAttribute("aria-pressed", on);
       mic.setAttribute("aria-label", on ? "Stop recording" : "Start recording");
     };
-    const setPlaying = on => {
-      playing = on;
-      playToggle.setAttribute("aria-pressed", on ? "true" : "false");
-      playToggle.setAttribute("aria-label", on ? "Pause audio" : "Play audio");
-      audioPanel.dataset.playing = on ? "true" : "false";
+    const syncTranscriptPanel = () => {
+      audioPanel.dataset.ready = hasTranscript || transcribing ? "true" : "false";
+      transcriptSpinner.dataset.visible = transcribing ? "true" : "false";
     };
-    const renderLeaderboard = () => {
-      leaderboardPanel.innerHTML = `
-        <div class="leaderboard-empty">
-          Top-ranked jokes will appear here once the backend provides the leaderboard data.
+    const setTranscript = (text, status = "") => {
+      transcript = text.trim();
+      transcriptCard.textContent = transcript || "Your transcript will appear here.";
+      panelStatus.textContent = status;
+      hasTranscript = !!transcript;
+      syncTranscriptPanel();
+    };
+    const escapeHtml = text => String(text ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[char]);
+    const renderLeaderboard = (results = leaderboardResults) => {
+      const saved = results.slice(0, 10);
+      if (!saved.length) {
+        leaderboardPanel.innerHTML = `
+          <div class="leaderboard-empty">
+            Top-ranked jokes will appear here once submissions are saved.
+          </div>
+        `;
+        return;
+      }
+      leaderboardPanel.innerHTML = saved.map(({ username, text }) => `
+        <div class="leaderboard-row">
+          <div class="leaderboard-name">${escapeHtml(username)}:</div>
+          <div class="text-card leaderboard-text">${escapeHtml(text)}</div>
         </div>
-      `;
+      `).join("");
     };
     const setLeaderboardOpen = on => {
       leaderboardToggle.setAttribute("aria-expanded", on ? "true" : "false");
@@ -442,6 +420,80 @@
     const setSubmissionSummary = on => {
       submissionSummary.dataset.visible = on ? "true" : "false";
     };
+    const resetTranscript = () => {
+      transcribing = false;
+      analysis = { classification: null, funniness_score: null };
+      setTranscript("", "");
+      transcriptCard.textContent = "Your transcript will appear here.";
+    };
+    const getSubmissionPayload = (name, text, result = {}) => ({
+      text,
+      username: name,
+      classification: Number.isFinite(result.classification) ? result.classification : null,
+      funniness_score: Number.isFinite(result.funniness_score) ? result.funniness_score : null,
+    });
+    const refreshLeaderboard = async () => {
+      try {
+        const response = await fetch("/api/analysis");
+        if (!response.ok) throw new Error("load failed");
+        const result = await response.json();
+        leaderboardResults = Array.isArray(result.results) ? result.results : [];
+        renderLeaderboard(leaderboardResults);
+        return leaderboardResults;
+      } catch {
+        leaderboardResults = [];
+        renderLeaderboard([]);
+        return [];
+      }
+    };
+    const submitJson = async payload => {
+      try {
+        const response = await fetch("/api/analysis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error("submit failed");
+        const result = await response.json();
+        return {
+          data: result.data || payload,
+          rank: result.rank,
+          total: result.total,
+        };
+      } catch {
+        return null;
+      }
+    };
+    const stopStream = () => {
+      stream?.getTracks().forEach(track => track.stop());
+      stream = null;
+    };
+    const transcribeAudio = async blob => {
+      const formData = new FormData();
+      formData.append("joke", blob, "joke.webm");
+      transcribing = true;
+      transcriptCard.textContent = "Transcribing your joke...";
+      panelStatus.textContent = "Transcribing...";
+      syncTranscriptPanel();
+      try {
+        const response = await fetch("/api/analysis", {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) throw new Error("transcription failed");
+        const result = await response.json();
+        transcribing = false;
+        analysis = {
+          classification: Number(result.data?.classification),
+          funniness_score: Number(result.data?.funniness_score),
+        };
+        setTranscript(result.data?.text || "", "Transcript ready to submit.");
+      } catch {
+        transcribing = false;
+        resetTranscript();
+        setNameNote("Transcription failed. Try again.");
+      }
+    };
 
     nameInput.addEventListener("input", () => {
       syncPrompt(nameInput.value.trim());
@@ -449,55 +501,91 @@
       if (!recording) setSubmissionSummary(false);
     });
 
-    mic.addEventListener("click", () => {
-      if (!recording) setSubmissionSummary(false);
-      recording = !recording;
-      if (!recording) {
-        hasClip = true;
+    mic.addEventListener("click", async () => {
+      setNameNote("");
+      setSubmissionSummary(false);
+      if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+        setNameNote("Audio recording is not supported in this browser.");
+        return;
       }
-      audioPanel.dataset.ready = !recording && hasClip;
-      setPlaying(false);
-      setRecording(recording);
+      if (!recording) {
+        resetTranscript();
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const chunks = [];
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = event => {
+            if (event.data.size) chunks.push(event.data);
+          };
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/webm" });
+            stopStream();
+            await transcribeAudio(audioBlob);
+          };
+          recording = true;
+          setRecording(true);
+          panelStatus.textContent = "Recording...";
+          mediaRecorder.start();
+        } catch {
+          stopStream();
+          setNameNote("Microphone permission is required.");
+          setRecording(false);
+          recording = false;
+        }
+        return;
+      }
+      recording = false;
+      setRecording(false);
+      panelStatus.textContent = "Finishing recording...";
+      mediaRecorder?.stop();
     });
 
-    playToggle.addEventListener("click", () => hasClip && setPlaying(!playing));
-    submitButton.addEventListener("click", () => {
+    submitButton.addEventListener("click", async () => {
       const name = nameInput.value.trim();
       if (!name) {
         setNameNote("Enter a unique username before submitting.");
         nameInput.focus();
         return;
       }
+      if (!transcript) {
+        setNameNote("Record a joke and wait for the transcript before submitting.");
+        return;
+      }
+      submitButton.disabled = true;
+      panelStatus.textContent = "Submitting...";
+      const payload = getSubmissionPayload(name, transcript, analysis);
+      const remote = await submitJson(payload);
+      if (!remote?.data) {
+        submitButton.disabled = false;
+        panelStatus.textContent = "";
+        setNameNote("Submission failed. Check the backend and try again.");
+        return;
+      }
+      const ranking = {
+        rank: remote.rank || 1,
+        total: remote.total || 1,
+      };
+      rankValue.textContent = ranking.rank;
+      totalValue.textContent = ranking.total;
       hasSubmitted = true;
-      hasClip = false;
       recording = false;
       setNameNote("");
-      setPlaying(false);
       setRecording(false);
       setSubmissionSummary(true);
-      audioPanel.dataset.ready = "false";
+      resetTranscript();
+      panelStatus.textContent = "";
       syncPrompt(name);
+      await refreshLeaderboard();
+      submitButton.disabled = false;
     });
     leaderboardToggle.addEventListener("click", () => {
-      setLeaderboardOpen(leaderboardPanel.dataset.open !== "true");
-    });
-    leaderboardPanel.addEventListener("click", event => {
-      const button = event.target.closest(".leaderboard-play");
-      if (!button) return;
-      const next = button.getAttribute("aria-pressed") !== "true";
-      leaderboardPanel.querySelectorAll(".leaderboard-row").forEach(row => {
-        row.dataset.playing = "false";
-        row.querySelector(".leaderboard-play").setAttribute("aria-pressed", "false");
-        row.querySelector(".leaderboard-play").setAttribute("aria-label", "Play ranked joke");
-      });
-      if (next) {
-        button.setAttribute("aria-pressed", "true");
-        button.setAttribute("aria-label", "Pause ranked joke");
-        button.closest(".leaderboard-row").dataset.playing = "true";
-      }
+      const opening = leaderboardPanel.dataset.open !== "true";
+      setLeaderboardOpen(opening);
+      if (opening) refreshLeaderboard();
     });
 
-    renderLeaderboard();
+    resetTranscript();
+    refreshLeaderboard();
   </script>
 </body>
 </html>
