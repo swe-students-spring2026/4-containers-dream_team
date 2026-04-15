@@ -5,19 +5,19 @@ This service determines whether input text contains humor and assigns a funnines
 
 from flask import Flask, request, jsonify, render_template
 import requests
-from pymongo import MongoClient 
+from pymongo import MongoClient
 import os
-
 
 mongo_url = os.getenv("MONGO_URI") or "mongodb://mongodb:27017"
 
 
-#get the collection
+# get the collection
 client = MongoClient(mongo_url)
 db = client["joke_database"]
 collection = db["jokes"]
 
 app = Flask(__name__)
+
 
 @app.route("/")
 def dashboard():
@@ -80,7 +80,6 @@ def get_analysis():
     for r in results:
         r["_id"] = str(r["_id"])
         final_results.append(r)
-
 
     return jsonify({"results": final_results}), 200
 
