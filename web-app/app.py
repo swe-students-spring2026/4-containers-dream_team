@@ -5,10 +5,18 @@ This service determines whether input text contains humor and assigns a funnines
 
 from flask import Flask, request, jsonify, render_template
 import requests
+from pymongo import MongoClient
+import os
+
+mongo_url = os.getenv("MONGO_URI") or "mongodb://mongodb:27017"
+
+
+# get the collection
+client = MongoClient(mongo_url)
+db = client["joke_database"]
+collection = db["jokes"]
 
 app = Flask(__name__)
-
-# @TODO initialize db
 
 
 @app.route("/")
@@ -53,7 +61,7 @@ def add_analysis():
         "funniness_score": result.score,
     }
 
-    # @TODO save to db
+    collection.insert_one(record)
 
     return jsonify({"status": "success", "data": record}), 201
 
@@ -63,15 +71,17 @@ def get_analysis():
     """
     Retrieve all stored analysis records.
 
-    @TODO:
-    - Fetch records from database
-    - Return them as JSON list
     """
 
-    # Placeholder response until DB is implemented
-    results = []
+    results = list(collection.find())
 
-    return jsonify({"results": results}), 200
+    final_results = []
+
+    for r in results:
+        r["_id"] = str(r["_id"])
+        final_results.append(r)
+
+    return jsonify({"results": final_results}), 200
 
 
 if __name__ == "__main__":
