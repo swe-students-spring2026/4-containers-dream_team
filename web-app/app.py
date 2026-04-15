@@ -35,7 +35,7 @@ def add_analysis():
 
     # Run joke to machine-learning-client where it is analyzed
     response = requests.post(
-        "http://machine-learning-client:5001/process", jokes={"joke": joke}, timeout=45
+        "http://machine-learning-client:5001/process", files={"joke": open(joke, 'rb')}, timeout=45
     )
 
     # check it ran correctly

@@ -10,9 +10,9 @@ app = Flask(__name__)
 @app.route("/process", methods=["GET"])
 def analyze_joke():
     """Takes joke passed through front end driver and analyzes joke before returning."""
-    if "joke" not in request.files:
+    if "files" not in request.files:
         return jsonify({"error": "joke not passed through"}), 404
-    audio = request.files["joke"]
+    audio = request.files["files"]
     if audio.filename == "":
         return jsonify({"error": "joke audio not saved properly"}), 400
     text = vtt(audio)
