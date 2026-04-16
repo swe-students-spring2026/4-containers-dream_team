@@ -10,13 +10,22 @@ app = Flask(__name__)
 @app.route("/process", methods=["POST"])
 def analyze_joke():
     """Takes joke passed through front end driver and analyzes joke before returning."""
+
     if "joke" not in request.files:
         return jsonify({"error": "joke not passed through"}), 400
+    
+
+    # Keep the upload contract explicit for the web-app bridge.
     audio = request.files["joke"]
+
     if audio.filename == "":
         return jsonify({"error": "joke audio not saved properly"}), 400
+    
+
+    # Transcribe first, then run the transcript through the joke model.
     text = vtt(audio)
     classification, score = analyze_text(text)
+    
     return jsonify({"text": text, "classification": classification, "score": score})
 
 

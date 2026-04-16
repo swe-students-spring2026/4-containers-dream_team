@@ -1,31 +1,30 @@
 """
-Pytest configuration and fixtures for testing the Flask application.
-This module provides a test client for making requests to the app
-without running the actual server.
+Pytest fixtures for exercising the real Flask application.
 """
 
+from pathlib import Path
+import sys
 import pytest
-from app import create_app  # pylint: disable=import-error
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from app import app as flask_app  
 
 
-@pytest.fixture
-def joke_ranking_service():
+@pytest.fixture(name="app")
+def app_fixture():
     """
-    Create and configure a new Flask app instance for testing.
+    Provide the web app configured for tests.
     """
-    service = create_app()
-    service.config["TESTING"] = True
-    return service
+
+    flask_app.config["TESTING"] = True
+    return flask_app
 
 
 @pytest.fixture
 def client(app):
     """
-    Provide a Flask test client for making HTTP requests
-    to the application during tests.
-
-    Usage in tests:
-        def test_example(client):
-            response = client.get("/")
+    Provide a Flask test client for route-level tests.
     """
+
     return app.test_client()

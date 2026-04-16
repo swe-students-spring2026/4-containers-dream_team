@@ -265,9 +265,15 @@
       border-top: 0;
     }
     .leaderboard-name {
-      min-width: 3.4rem;
+      min-width: 5.9rem;
       font-size: 0.95rem;
       padding-top: 0.55rem;
+    }
+    .leaderboard-score {
+      display: block;
+      margin-top: 0.35rem;
+      color: var(--muted);
+      font-size: 0.78rem;
     }
     .leaderboard-empty {
       padding: 1rem 0.85rem;
@@ -331,7 +337,7 @@
       </svg>
     </button>
     <p id="submissionSummary" class="submission-summary" data-visible="false" aria-live="polite">
-      Your joke was ranked <span id="rankValue">{rank}</span><br>of <span id="totalValue">{total}</span> jokes
+      Your joke is a <span id="scoreValue">{score}</span>/100 and ranked <span id="rankValue">{rank}</span> out of <span id="totalValue">{total}</span>
     </p>
     <div id="audioPanel" class="audio-panel" data-ready="false" data-playing="false">
       <div>
@@ -363,6 +369,7 @@
     const submitButton = document.getElementById("submitButton");
     const leaderboardToggle = document.getElementById("leaderboardToggle");
     const leaderboardPanel = document.getElementById("leaderboardPanel");
+    const scoreValue = document.getElementById("scoreValue");
     const rankValue = document.getElementById("rankValue");
     const totalValue = document.getElementById("totalValue");
     let mediaRecorder, stream;
@@ -371,22 +378,27 @@
     let analysis = { classification: null, funniness_score: null };
     let leaderboardResults = [];
 
+    // Surface short validation and backend messages near the username field.
     const setNameNote = text => {
       nameNote.textContent = text;
       nameNote.dataset.visible = !!text;
     };
+    // Swap between the first-joke and follow-up-joke prompt copy.
     const syncPrompt = name => {
       const lead = hasSubmitted ? "Tell another joke" : "Tell a joke";
       prompt.textContent = name ? `${lead} ${name}!` : `${lead}!`;
     };
+    // Keep the microphone button visuals synced with recording state.
     const setRecording = on => {
       mic.setAttribute("aria-pressed", on);
       mic.setAttribute("aria-label", on ? "Stop recording" : "Start recording");
     };
+    // Expand the transcript card while audio is being processed or once text exists.
     const syncTranscriptPanel = () => {
       audioPanel.dataset.ready = hasTranscript || transcribing ? "true" : "false";
       transcriptSpinner.dataset.visible = transcribing ? "true" : "false";
     };
+    // Update the transcript preview and its status line together.
     const setTranscript = (text, status = "") => {
       transcript = text.trim();
       transcriptCard.textContent = transcript || "Your transcript will appear here.";
@@ -394,6 +406,7 @@
       hasTranscript = !!transcript;
       syncTranscriptPanel();
     };
+    // Escape dynamic strings before they are inserted into leaderboard markup.
     const escapeHtml = text => String(text ?? "").replace(/[&<>"']/g, char => ({
       "&": "&amp;",
       "<": "&lt;",
@@ -401,6 +414,7 @@
       '"': "&quot;",
       "'": "&#39;",
     })[char]);
+    // Render only the first ten ranked results returned by the backend.
     const renderLeaderboard = (results = leaderboardResults) => {
       const saved = results.slice(0, 10);
       if (!saved.length) {
@@ -411,32 +425,37 @@
         `;
         return;
       }
-      leaderboardPanel.innerHTML = saved.map(({ username, text }) => `
+      leaderboardPanel.innerHTML = saved.map(({ username, text, funniness_score }, index) => `
         <div class="leaderboard-row">
-          <div class="leaderboard-name">${escapeHtml(username)}:</div>
-          <div class="text-card leaderboard-text">${escapeHtml(text)}</div>
+          <div class="leaderboard-name">${index + 1}. ${escapeHtml(username)}:</div>
+          <div class="text-card leaderboard-text">${escapeHtml(text)}<span class="leaderboard-score">Score: ${Number.isFinite(Number(funniness_score)) ? Number(funniness_score) : "-"}</span></div>
         </div>
       `).join("");
     };
+    // Toggle the leaderboard panel open and closed from one place.
     const setLeaderboardOpen = on => {
       leaderboardToggle.setAttribute("aria-expanded", on ? "true" : "false");
       leaderboardPanel.dataset.open = on ? "true" : "false";
     };
+    // Show the post-submit ranking message only when a joke was accepted.
     const setSubmissionSummary = on => {
       submissionSummary.dataset.visible = on ? "true" : "false";
     };
+    // Clear any stale transcript state before the next recording round.
     const resetTranscript = () => {
       transcribing = false;
       analysis = { classification: null, funniness_score: null };
       setTranscript("", "");
       transcriptCard.textContent = "Your transcript will appear here.";
     };
+    // Match the backend JSON contract exactly when sending a finished joke.
     const getSubmissionPayload = (name, text, result = {}) => ({
       text,
       username: name,
       classification: Number.isFinite(result.classification) ? result.classification : null,
       funniness_score: Number.isFinite(result.funniness_score) ? result.funniness_score : null,
     });
+    // Pull the ranked joke list from the backend whenever the leaderboard opens.
     const refreshLeaderboard = async () => {
       try {
         const response = await fetch("/api/analysis");
@@ -451,6 +470,7 @@
         return [];
       }
     };
+    // Submit the final transcript and metadata after the user confirms it.
     const submitJson = async payload => {
       try {
         const response = await fetch("/api/analysis", {
@@ -461,6 +481,8 @@
         if (!response.ok) throw new Error("submit failed");
         const result = await response.json();
         return {
+          status: result.status,
+          message: result.message,
           data: result.data || payload,
           rank: result.rank,
           total: result.total,
@@ -469,10 +491,12 @@
         return null;
       }
     };
+    // Release the microphone track once recording is finished or canceled.
     const stopStream = () => {
       stream?.getTracks().forEach(track => track.stop());
       stream = null;
     };
+    // Send the in-memory recording to the backend for transcription and scoring.
     const transcribeAudio = async blob => {
       const formData = new FormData();
       formData.append("joke", blob, "joke.webm");
@@ -500,12 +524,14 @@
       }
     };
 
+    // Keep prompt text and validation messages current while the user types.
     nameInput.addEventListener("input", () => {
       syncPrompt(nameInput.value.trim());
       setNameNote("");
       if (!recording) setSubmissionSummary(false);
     });
 
+    // Use one button to start recording, stop recording, and kick off transcription.
     mic.addEventListener("click", async () => {
       setNameNote("");
       setSubmissionSummary(false);
@@ -545,6 +571,7 @@
       mediaRecorder?.stop();
     });
 
+    // Save accepted jokes, but leave rejected transcripts visible for quick retry.
     submitButton.addEventListener("click", async () => {
       const name = nameInput.value.trim();
       if (!name) {
@@ -566,12 +593,15 @@
         setNameNote("Submission failed. Check the backend and try again.");
         return;
       }
-      const ranking = {
-        rank: remote.rank || 1,
-        total: remote.total || 1,
-      };
-      rankValue.textContent = ranking.rank;
-      totalValue.textContent = ranking.total;
+      if (remote.status === "rejected") {
+        submitButton.disabled = false;
+        setSubmissionSummary(false);
+        panelStatus.textContent = remote.message || "That wasn't a joke.";
+        return;
+      }
+      scoreValue.textContent = Number(remote.data?.funniness_score ?? payload.funniness_score) || 0;
+      rankValue.textContent = remote.rank || 1;
+      totalValue.textContent = remote.total || 1;
       hasSubmitted = true;
       recording = false;
       setNameNote("");
@@ -583,12 +613,14 @@
       await refreshLeaderboard();
       submitButton.disabled = false;
     });
+    // Lazy-load leaderboard data only when the user opens the panel.
     leaderboardToggle.addEventListener("click", () => {
       const opening = leaderboardPanel.dataset.open !== "true";
       setLeaderboardOpen(opening);
       if (opening) refreshLeaderboard();
     });
 
+    // Seed the initial empty state from backend data when the page loads.
     resetTranscript();
     refreshLeaderboard();
   </script>
