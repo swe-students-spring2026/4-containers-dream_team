@@ -21,7 +21,6 @@ def voice_to_text(audio):
 
     if transcript.status == "error":
         raise RuntimeError(f"Transcription failed: {transcript.error}")
-    if transcript.translated_texts == None:
+    if transcript.translated_texts is None:
         return transcript.text
-    else:
-        return transcript.translated_texts["en"]
+    return transcript.translated_texts["en"]

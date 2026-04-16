@@ -1,6 +1,7 @@
 """Flask bridge for frontend joke transcription and submission."""
 
 import os
+from functools import lru_cache
 from pathlib import Path
 from time import time
 
@@ -12,22 +13,16 @@ app = Flask(__name__)
 ROOT = Path(__file__).resolve().parent
 ML_URL = "http://machine-learning-client:5001/process"
 MONGO_URI = os.getenv("MONGO_URI") or "mongodb://mongodb:27017"
-_mongo_client = None
-_collection = None
 
 
+@lru_cache(maxsize=1)
 def get_collection():
     """Connect to MongoDB and return the jokes collection."""
 
-    global _mongo_client, _collection
-    if _collection is not None:
-        return _collection
     try:
         client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=1000)
         client.admin.command("ping")
-        _mongo_client = client
-        _collection = client["joke_database"]["jokes"]
-        return _collection
+        return client["joke_database"]["jokes"]
     except errors.PyMongoError as exc:
         raise RuntimeError("database unavailable") from exc
 
@@ -61,60 +56,65 @@ def dashboard():
     return send_from_directory(ROOT, "index.html")
 
 
-@app.route("/api/analysis", methods=["POST"])
-def add_analysis():
-    """Accept either an uploaded joke audio file or a JSON joke payload."""
+def create_app():
+    """Provide the Flask app for tests and external runners."""
 
-    if request.is_json:
-        data = request.get_json(force=True) or {}
-        required = ("text", "username", "classification", "funniness_score")
-        if any(key not in data for key in required):
-            return jsonify({"error": "missing submission fields"}), 400
-        try:
-            collection = get_collection()
-        except RuntimeError:
-            return jsonify({"error": "database unavailable"}), 500
-        try:
-            record = {
-                "text": str(data["text"]).strip(),
-                "username": str(data["username"]).strip(),
-                "classification": int(data["classification"]),
-                "funniness_score": int(data["funniness_score"]),
-                "created_at": int(time() * 1000),
+    return app
+
+
+def save_submission(data):
+    """Validate and persist a JSON joke submission."""
+
+    required = ("text", "username", "classification", "funniness_score")
+    if any(key not in data for key in required):
+        return jsonify({"error": "missing submission fields"}), 400
+    try:
+        collection = get_collection()
+    except RuntimeError:
+        return jsonify({"error": "database unavailable"}), 500
+    try:
+        record = {
+            "text": str(data["text"]).strip(),
+            "username": str(data["username"]).strip(),
+            "classification": int(data["classification"]),
+            "funniness_score": int(data["funniness_score"]),
+            "created_at": int(time() * 1000),
+        }
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid submission fields"}), 400
+    if not record["text"] or not record["username"]:
+        return jsonify({"error": "missing submission fields"}), 400
+    insert_result = collection.insert_one(record)
+    results = sorted_results(collection)
+    rank = next(
+        (
+            index
+            for index, item in enumerate(results, start=1)
+            if item["id"] == str(insert_result.inserted_id)
+        ),
+        len(results),
+    )
+    return (
+        jsonify(
+            {
+                "status": "success",
+                "data": serialize_record({**record, "_id": insert_result.inserted_id}),
+                "rank": rank,
+                "total": len(results),
             }
-        except (TypeError, ValueError):
-            return jsonify({"error": "invalid submission fields"}), 400
-        if not record["text"] or not record["username"]:
-            return jsonify({"error": "missing submission fields"}), 400
-        insert_result = collection.insert_one(record)
-        results = sorted_results(collection)
-        rank = next(
-            (
-                index
-                for index, item in enumerate(results, start=1)
-                if item["id"] == str(insert_result.inserted_id)
-            ),
-            len(results),
-        )
-        return (
-            jsonify(
-                {
-                    "status": "success",
-                    "data": serialize_record({**record, "_id": insert_result.inserted_id}),
-                    "rank": rank,
-                    "total": len(results),
-                }
-            ),
-            201,
-        )
+        ),
+        201,
+    )
+
+
+def transcribe_upload():
+    """Send uploaded joke audio to the ML service for transcription and scoring."""
 
     if "joke" not in request.files:
         return jsonify({"error": "missing input"}), 400
-
     joke = request.files["joke"]
     if not joke.filename:
         return jsonify({"error": "missing input"}), 400
-
     try:
         joke.stream.seek(0)
         response = requests.post(
@@ -135,6 +135,15 @@ def add_analysis():
         "funniness_score": result["score"],
     }
     return jsonify({"status": "success", "data": record}), 200
+
+
+@app.route("/api/analysis", methods=["POST"])
+def add_analysis():
+    """Accept either an uploaded joke audio file or a JSON joke payload."""
+
+    if request.is_json:
+        return save_submission(request.get_json(force=True) or {})
+    return transcribe_upload()
 
 
 @app.route("/api/analysis", methods=["GET"])
