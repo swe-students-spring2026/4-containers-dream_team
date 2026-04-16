@@ -12,6 +12,7 @@ rapidfuzz = "*"
 coverage = "*"
 pytest = "*"
 tomli = "*"
+exceptiongroup = "*"
 
 [requires]
 python_version = "3.10"
