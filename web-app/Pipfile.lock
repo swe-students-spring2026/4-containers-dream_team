@@ -233,7 +233,6 @@
             "markers": "python_version >= '3.10'",
             "version": "==2.8.0"
         },
-<<<<<<< HEAD
         "exceptiongroup": {
             "hashes": [
                 "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219",
@@ -242,8 +241,6 @@
             "markers": "python_version >= '3.7'",
             "version": "==1.3.1"
         },
-=======
->>>>>>> f47f154b4917615887cf23a5f39650af0b73b06d
         "flask": {
             "hashes": [
                 "sha256:0ef0e52b8a9cd932855379197dd8f94047b359ca0a78695144304cb45f87c9eb",
