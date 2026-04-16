@@ -5,14 +5,10 @@ if a piece of text has humor and then ranks how funny it is.
 
 import os
 
-# Used to load environment credentials
-from dotenv import load_dotenv
-
 # Used to get a score for the joke
 from google import genai
 from google.genai import types
 
-load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -29,9 +25,11 @@ def generate_classification(text):
 
     response = client.models.generate_content(
         model="gemini-3-flash-preview",
-        config=types.GenerateContentConfig(system_instruction="""
+        config=types.GenerateContentConfig(
+            system_instruction="""
             Return only 1 if the input contains 
-            humor and only 0 if it is humorless"""),
+            humor and only 0 if it is humorless"""
+        ),
         contents=f"{text}",
     )
 

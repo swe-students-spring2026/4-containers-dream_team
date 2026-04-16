@@ -10,6 +10,7 @@ app = Flask(__name__)
 @app.route("/process", methods=["POST"])
 def analyze_joke():
     """Takes joke passed through front end driver and analyzes joke before returning."""
+<<<<<<< HEAD
 
     if "joke" not in request.files:
         return jsonify({"error": "joke not passed through"}), 400
@@ -23,6 +24,11 @@ def analyze_joke():
     
 
     # Transcribe first, then run the transcript through the joke model.
+=======
+    if "files" not in request.files:
+        return jsonify({"error": "joke not passed through"}), 404
+    audio = request.files["files"]
+>>>>>>> f47f154b4917615887cf23a5f39650af0b73b06d
     text = vtt(audio)
     classification, score = analyze_text(text)
     

@@ -1,0 +1,40 @@
+name: run-tests
+
+on: [push, pull_request]
+
+env:  
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  VTT_API_KEY: ${{ secrets.VTT_API_KEY }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: prod-tester
+    strategy:
+      fail-fast: false 
+      matrix:
+        subdir: [web-app, machine-learning-client]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          
+      - name: Install dependencies
+        if: ${{ hashFiles(format('{0}/**/*.py', matrix.subdir)) != '' }}
+        run: |
+          cd ${{ matrix.subdir }}
+          python -m pip install --upgrade pip
+          python -m pip install pipenv
+          
+          pipenv install exceptiongroup
+          pipenv sync --dev --python $(which python)
+          
+      - name: Test with pytest
+        if: ${{ hashFiles(format('{0}/**/*.py', matrix.subdir)) != '' }}
+        run: |
+          cd ${{ matrix.subdir }}
+          pipenv run pytest
