@@ -1,32 +1,31 @@
-version: "3.9"
-
 services:
   mongodb:
     image: mongo:7
     container_name: joke-db
-    ports:
-      - "27017:27017"
     volumes:
       - mongo_data:/data/db
-    
+
   machine-learning-client:
     build:
       context: ./machine-learning-client
-      container_name: joke-ml-client
-      ports:
-        - "5001:5001"
-      depends_on:
-        - mongodb
-  
+    container_name: joke-ml-client
+    depends_on:
+      - mongodb
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      VTT_API_KEY: ${VTT_API_KEY}
+
   web-app:
     build:
       context: ./web-app
     container_name: joke-web-app
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
     ports:
-      - "5000:5000"
+      - "5050:5000"
     depends_on:
       - mongodb
       - machine-learning-client
-  
-  volumes:
-    mongo-data:
+
+volumes:
+  mongo_data:

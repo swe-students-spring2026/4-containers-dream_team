@@ -6,6 +6,7 @@ pymongo = "*"
 assemblyai = "*"
 google-genai = "*"
 python-dotenv = "*"
+exceptiongroup = "*"
 
 [dev-packages]
 rapidfuzz = "*"

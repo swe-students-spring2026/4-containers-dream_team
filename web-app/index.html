@@ -54,12 +54,14 @@
       width: 100%;
       min-height: 0.85rem;
       margin: -0.6rem 0 0;
+      padding-block: 0;
       color: #8b1e1e;
       font-size: 0.78rem;
       opacity: 0;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.15s ease, padding 0.15s ease;
     }
     .name-note[data-visible="true"] {
+      padding-block: 2px;
       opacity: 1;
     }
     .name-row label {
@@ -92,17 +94,19 @@
     .submission-summary {
       max-height: 0;
       margin: 0;
+      padding-block: 0;
       overflow: hidden;
       text-align: center;
       font-size: clamp(1.15rem, 4vw, 1.45rem);
       line-height: 1.08;
       opacity: 0;
       transform: translateY(-0.3rem);
-      transition: opacity 0.18s ease, transform 0.18s ease, max-height 0.18s ease, margin 0.18s ease;
+      transition: opacity 0.18s ease, transform 0.18s ease, max-height 0.18s ease, margin 0.18s ease, padding 0.18s ease;
     }
     .submission-summary[data-visible="true"] {
       max-height: 3rem;
       margin: -0.1rem 0 0;
+      padding-block: 2px;
       opacity: 1;
       transform: translateY(0);
     }
@@ -178,6 +182,7 @@
       width: 100%;
       min-height: 0.8rem;
       margin: -0.25rem 0 0;
+      padding-block: 2px;
       color: var(--muted);
       font-size: 0.78rem;
       text-align: left;

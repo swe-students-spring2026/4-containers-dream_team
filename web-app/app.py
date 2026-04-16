@@ -7,37 +7,51 @@ from time import time
 from flask import Flask, jsonify, request, send_from_directory
 from pymongo import DESCENDING, MongoClient, errors
 import requests
-from pymongo import MongoClient
-import os
-
-mongo_url = os.getenv("MONGO_URI") or "mongodb://mongodb:27017"
-
-
-# get the collection
-client = MongoClient(mongo_url)
-db = client["joke_database"]
-collection = db["jokes"]
 
 app = Flask(__name__)
 ROOT = Path(__file__).resolve().parent
-ML_URLS = (
-    "http://machine-learning-client:5001/process",
-    "http://127.0.0.1:5001/process",
-)
-MONGO_URIS = tuple(
-    dict.fromkeys(
-        filter(
-            None,
-            (
-                os.getenv("MONGO_URI"),
-                "mongodb://127.0.0.1:27017",
-                "mongodb://mongodb:27017",
-            ),
-        )
-    )
-)
+ML_URL = "http://machine-learning-client:5001/process"
+MONGO_URI = os.getenv("MONGO_URI") or "mongodb://mongodb:27017"
 _mongo_client = None
 _collection = None
+
+
+def get_collection():
+    """Connect to MongoDB and return the jokes collection."""
+
+    global _mongo_client, _collection
+    if _collection is not None:
+        return _collection
+    try:
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=1000)
+        client.admin.command("ping")
+        _mongo_client = client
+        _collection = client["joke_database"]["jokes"]
+        return _collection
+    except errors.PyMongoError as exc:
+        raise RuntimeError("database unavailable") from exc
+
+
+def serialize_record(record):
+    """Convert a Mongo document into frontend-safe JSON."""
+
+    return {
+        "id": str(record["_id"]),
+        "text": record.get("text", ""),
+        "username": record.get("username", ""),
+        "classification": record.get("classification", -1),
+        "funniness_score": record.get("funniness_score", -1),
+        "created_at": record.get("created_at", 0),
+    }
+
+
+def sorted_results(collection):
+    """Return saved jokes ordered from funniest to least funny."""
+
+    cursor = collection.find().sort(
+        [("funniness_score", DESCENDING), ("created_at", DESCENDING)]
+    )
+    return [serialize_record(record) for record in cursor]
 
 
 @app.route("/")
@@ -101,20 +115,15 @@ def add_analysis():
     if not joke.filename:
         return jsonify({"error": "missing input"}), 400
 
-    response = None
-    for url in ML_URLS:
-        try:
-            joke.stream.seek(0)
-            response = requests.post(
-                url,
-                files={
-                    "joke": (joke.filename, joke.stream, joke.mimetype or "audio/webm")
-                },
-                timeout=45,
-            )
-            break
-        except requests.RequestException:
-            response = None
+    try:
+        joke.stream.seek(0)
+        response = requests.post(
+            ML_URL,
+            files={"joke": (joke.filename, joke.stream, joke.mimetype or "audio/webm")},
+            timeout=45,
+        )
+    except requests.RequestException:
+        response = None
 
     if response is None or response.status_code != 200:
         return jsonify({"error": "machine learning client failed"}), 500
@@ -125,28 +134,19 @@ def add_analysis():
         "classification": result["classification"],
         "funniness_score": result["score"],
     }
-
-    collection.insert_one(record)
-
-    return jsonify({"status": "success", "data": record}), 201
+    return jsonify({"status": "success", "data": record}), 200
 
 
 @app.route("/api/analysis", methods=["GET"])
 def get_analysis():
-    """
-    Retrieve all stored analysis records.
+    """Return saved joke submissions for the frontend leaderboard."""
 
-    """
-
-    results = list(collection.find())
-
-    final_results = []
-
-    for r in results:
-        r["_id"] = str(r["_id"])
-        final_results.append(r)
-
-    return jsonify({"results": final_results}), 200
+    try:
+        collection = get_collection()
+    except RuntimeError:
+        return jsonify({"error": "database unavailable"}), 500
+    results = sorted_results(collection)
+    return jsonify({"results": results}), 200
 
 
 if __name__ == "__main__":
