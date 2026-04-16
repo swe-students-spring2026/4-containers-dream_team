@@ -3,8 +3,8 @@ name: run-tests
 on: [push, pull_request]
 
 env:  
-  GEMINI_API_KEY = ${{ secrets.GEMINI_API_KEY}}
-  VTT_API_KEY = ${{ secrets.VTT_API_KEY}}
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  VTT_API_KEY: ${{ secrets.VTT_API_KEY }}
 
 jobs:
   test:
