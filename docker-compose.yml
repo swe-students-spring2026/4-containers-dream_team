@@ -17,6 +17,9 @@ services:
       - "5001:5001"
     depends_on:
       - mongodb
+    environment:
+    - GEMINI_API_KEY=${GEMINI_API_KEY}
+    - VTT_API_KEY=${VTT_API_KEY}
   
   web-app:
     build:
