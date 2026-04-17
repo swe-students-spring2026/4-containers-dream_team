@@ -25,11 +25,9 @@ def generate_classification(text):
 
     response = client.models.generate_content(
         model="gemini-3-flash-preview",
-        config=types.GenerateContentConfig(
-            system_instruction="""
+        config=types.GenerateContentConfig(system_instruction="""
             Return only 1 if the input contains 
-            humor and only 0 if it is humorless"""
-        ),
+            humor and only 0 if it is humorless"""),
         contents=f"{text}",
     )
 
