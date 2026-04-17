@@ -15,7 +15,10 @@ def analyze_joke():
     audio = request.files["joke"]
     text = vtt(audio)
     classification, score = analyze_text(text)
-    return jsonify({"text": text, "classification": classification, "score": score}), 200
+    return (
+        jsonify({"text": text, "classification": classification, "score": score}),
+        200,
+    )
 
 
 if __name__ == "__main__":

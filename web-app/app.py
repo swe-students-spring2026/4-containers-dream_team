@@ -47,7 +47,11 @@ def add_analysis():
     try:
         # send uploaded audio to ML service
         files = {
-            "joke": (joke_file.filename, joke_file.stream, joke_file.mimetype or "audio/webm")
+            "joke": (
+                joke_file.filename,
+                joke_file.stream,
+                joke_file.mimetype or "audio/webm",
+            )
         }
 
         response = requests.post(
@@ -57,7 +61,6 @@ def add_analysis():
         )
     except requests.RequestException:
         return jsonify({"error": "machine learning client unavailable"}), 500
-
 
     # check it ran correctly
     if response.status_code != 200:
