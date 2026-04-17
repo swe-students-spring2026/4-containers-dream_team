@@ -31,6 +31,25 @@ def get_collection():
         raise RuntimeError("database unavailable") from exc
 
 
+class CollectionProxy:
+    """Compatibility wrapper for callers that still expect a module-level collection."""
+
+    def insert_one(self, *args, **kwargs):
+        """Insert a single Mongo document through the cached collection."""
+        return get_collection().insert_one(*args, **kwargs)
+
+    def find(self, *args, **kwargs):
+        """Return a Mongo cursor from the cached collection."""
+        return get_collection().find(*args, **kwargs)
+
+    def count_documents(self, *args, **kwargs):
+        """Count Mongo documents through the cached collection."""
+        return get_collection().count_documents(*args, **kwargs)
+
+
+collection = CollectionProxy()
+
+
 def serialize_record(record):
     """Convert a Mongo document into frontend-safe JSON."""
 
@@ -44,11 +63,11 @@ def serialize_record(record):
     }
 
 
-def sorted_results(collection):
+def sorted_results(results_collection):
     """Return saved jokes ordered from funniest to least funny."""
 
     # Higher scores rank first. If there is a tie, the newer joke appears above older ones.
-    cursor = collection.find().sort(SORT_ORDER)
+    cursor = results_collection.find().sort(SORT_ORDER)
     return [serialize_record(record) for record in cursor]
 
 
@@ -92,22 +111,21 @@ def save_submission(data):
             200,
         )
     try:
-        collection = get_collection()
+        # Save accepted jokes before recomputing the ranked leaderboard positions.
+        insert_result = collection.insert_one(record)
+        rank = next(
+            (
+                index
+                for index, item in enumerate(
+                    collection.find({}, {"_id": 1}).sort(SORT_ORDER), start=1
+                )
+                if item["_id"] == insert_result.inserted_id
+            ),
+            1,
+        )
+        total = collection.count_documents({})
     except RuntimeError:
         return jsonify({"error": "database unavailable"}), 500
-    # Save accepted jokes before recomputing the ranked leaderboard positions.
-    insert_result = collection.insert_one(record)
-    rank = next(
-        (
-            index
-            for index, item in enumerate(
-                collection.find({}, {"_id": 1}).sort(SORT_ORDER), start=1
-            )
-            if item["_id"] == insert_result.inserted_id
-        ),
-        1,
-    )
-    total = collection.count_documents({})
     return (
         jsonify(
             {
@@ -142,13 +160,14 @@ def transcribe_upload():
     if response is None or response.status_code != 200:
         return jsonify({"error": "machine learning client failed"}), 500
     result = response.json()
-    # Return only the analysis payload; persistent saves happen on JSON submit.
-    record = {
-        "text": result["text"],
-        "classification": result["classification"],
-        "funniness_score": result["score"],
-    }
-    return jsonify({"status": "success", "data": record}), 200
+    return save_submission(
+        {
+            "username": request.form.get("username", "").strip(),
+            "text": result["text"],
+            "classification": result["classification"],
+            "funniness_score": result["score"],
+        }
+    )
 
 
 @app.route("/api/analysis", methods=["POST"])
@@ -166,11 +185,10 @@ def get_analysis():
     """Return saved joke submissions for the frontend leaderboard."""
 
     try:
-        collection = get_collection()
+        # The frontend slices the first ten results, so return the full ranked order.
+        results = sorted_results(collection)
     except RuntimeError:
         return jsonify({"error": "database unavailable"}), 500
-    # The frontend slices the first ten results, so return the full ranked order.
-    results = sorted_results(collection)
     return jsonify({"results": results}), 200
 
 

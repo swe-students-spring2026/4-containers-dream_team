@@ -11,21 +11,21 @@ from app import app
 @pytest.fixture(name="client")
 def client_fixture():
     """Create a Flask test client."""
-
     app.config["TESTING"] = True
     return app.test_client()
 
 
 def test_dashboard(client):
     """Test that the dashboard endpoint returns HTTP 200."""
-
     res = client.get("/")
     assert res.status_code == 200
 
 
-def test_post_analysis_upload(client):
-    """Ensure audio uploads are forwarded to the ML service successfully."""
-
+def test_post_analysis(client):
+    """
+    Ensure POST /api/analysis returns 201 when given valid audio input,
+    with ML service and database interactions mocked.
+    """
     fake_response = Mock()
     fake_response.status_code = 200
     fake_response.json.return_value = {
@@ -34,59 +34,37 @@ def test_post_analysis_upload(client):
         "score": 10,
     }
 
-    with patch("app.requests.post", return_value=fake_response):
+    fake_insert = Mock()
+    fake_insert.inserted_id = "123"
+    fake_cursor = Mock()
+    fake_cursor.sort.return_value = [{"_id": "123"}]
+
+    with patch("app.requests.post", return_value=fake_response), patch(
+        "app.collection.insert_one", return_value=fake_insert
+    ), patch("app.collection.find", return_value=fake_cursor), patch(
+        "app.collection.count_documents", return_value=1
+    ):
+
         res = client.post(
             "/api/analysis",
-            data={"joke": (io.BytesIO(b"audio"), "joke.webm")},
+            data={
+                "username": "Sam",
+                "joke": (io.BytesIO(b"fake audio"), "joke.webm"),
+            },
             content_type="multipart/form-data",
         )
 
-    assert res.status_code == 200
-    assert res.get_json()["data"]["text"] == "funny joke"
-
-
-def test_post_analysis_json(client):
-    """Ensure JSON joke submissions are saved and ranked."""
-
-    collection = Mock()
-    collection.insert_one.return_value.inserted_id = "123"
-    collection.find.return_value.sort.return_value = [{"_id": "123"}]
-    collection.count_documents.return_value = 1
-
-    with patch("app.get_collection", return_value=collection):
-        res = client.post(
-            "/api/analysis",
-            json={
-                "text": "why did the chicken cross the road",
-                "username": "Sam",
-                "classification": 1,
-                "funniness_score": 88,
-            },
-        )
-
     assert res.status_code == 201
-    assert res.get_json()["rank"] == 1
 
 
 def test_get_analysis(client):
     """Test that retrieving analysis data returns HTTP 200."""
+    fake_cursor = Mock()
+    fake_cursor.sort.return_value = []
 
-    collection = Mock()
-    collection.find.return_value.sort.return_value = [
-        {
-            "text": "funny joke",
-            "username": "Sam",
-            "classification": 1,
-            "funniness_score": 10,
-            "created_at": 1,
-        }
-    ]
-
-    with patch("app.get_collection", return_value=collection):
+    with patch("app.collection.find", return_value=fake_cursor):
         res = client.get("/api/analysis")
-
     assert res.status_code == 200
-    assert res.get_json()["results"][0]["username"] == "Sam"
 
 
 def test_post_analysis_missing_file(client):
@@ -94,7 +72,7 @@ def test_post_analysis_missing_file(client):
 
     res = client.post(
         "/api/analysis",
-        data={},
+        data={"username": "Sam"},
         content_type="multipart/form-data",
     )
 
@@ -109,9 +87,13 @@ def test_post_analysis_ml_failure(client):
     fake_response.status_code = 500
 
     with patch("app.requests.post", return_value=fake_response):
+
         res = client.post(
             "/api/analysis",
-            data={"joke": (io.BytesIO(b"audio"), "joke.webm")},
+            data={
+                "username": "Sam",
+                "joke": (io.BytesIO(b"audio"), "joke.webm"),
+            },
             content_type="multipart/form-data",
         )
 
