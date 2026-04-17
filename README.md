@@ -1,4 +1,15 @@
 ![Lint-free](https://github.com/nyu-software-engineering/containerized-app-exercise/actions/workflows/lint.yml/badge.svg)
+[![run-tests](https://github.com/swe-students-spring2026/4-containers-dream_team/actions/workflows/pytest.yml/badge.svg)](https://github.com/swe-students-spring2026/4-containers-dream_team/actions/workflows/pytest.yml)
+
+# FunnAI
+A web-app that lets you record a joke, and then it will give you a score back on how funny it is. FunnAI stores all recorded jokes and will rank your joke based on how funny it is compared to other people.
+
+# Contributors
+- [Luca](https://github.com/Landreani04)
+- [Aleks Nuzhnyi](https://github.com/nuzhny25)
+- [Mikhail Bond](https://github.com/mikhailbond1)
+- [Rohit Dayanand](https://github.com/RohitDayanand)
+- [Lucas Bazoberry](https://github.com/lucasbazoberry)
 
 # Containerized App Exercise
 
@@ -13,6 +24,14 @@ To run this system, you need to configure your environment and initialize the da
 
 The application requires several environment variables to handle API integrations and server settings.
 
-    1. Create a .env file in the root directory.
+    1. Create a .env file in the root directory and the machine-learning-client directory.
 
     2. Copy the variables from .env.example
+
+## Docker initialization 
+
+1. ```docker compose up —build```
+
+2. Go to local host 5000
+
+3. Try recording and sending the audio!
