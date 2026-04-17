@@ -8,7 +8,7 @@ import pytest
 from app import app
 
 
-@pytest.fixture (name="client")
+@pytest.fixture(name="client")
 def client_fixture():
     """Create a Flask test client."""
     app.config["TESTING"] = True
