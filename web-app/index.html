@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FunnAI</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+      --text: #111;
+      --line: #7a7a7a;
+      --muted: #555;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: grid;
+      place-items: start center;
+      padding:
+        max(0.9rem, env(safe-area-inset-top))
+        max(0.9rem, env(safe-area-inset-right))
+        max(1rem, env(safe-area-inset-bottom))
+        max(0.9rem, env(safe-area-inset-left));
+      background: var(--bg);
+      color: var(--text);
+      font: 400 clamp(0.95rem, 2vw, 1rem) / 1.35 "Avenir Next", "Trebuchet MS", sans-serif;
+    }
+    main {
+      width: min(100%, 22.25rem);
+      min-height: calc(100dvh - max(1.8rem, env(safe-area-inset-top)) - max(2rem, env(safe-area-inset-bottom)));
+      padding: 2rem 0 1rem;
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 1rem;
+    }
+    h1 {
+      margin: calc(1.25rem + 100px) 0 0;
+      padding-bottom: 9.375rem;
+      font-size: clamp(2.4rem, 10vw, 3.1rem);
+      font-weight: 500;
+      letter-spacing: -0.05em;
+    }
+    .name-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 0.9rem;
+    }
+    .name-note {
+      width: 100%;
+      min-height: 0.85rem;
+      margin: -0.6rem 0 0;
+      padding-block: 0;
+      color: #8b1e1e;
+      font-size: 0.78rem;
+      opacity: 0;
+      transition: opacity 0.15s ease, padding 0.15s ease;
+    }
+    .name-note[data-visible="true"] {
+      padding-block: 2px;
+      opacity: 1;
+    }
+    .name-row label {
+      font-size: clamp(1.1rem, 4.8vw, 1.45rem);
+    }
+    .prompt {
+      font-size: calc(clamp(1.1rem, 4.8vw, 1.45rem) + 5px);
+    }
+    input,
+    button {
+      font: inherit;
+    }
+    input {
+      min-width: 0;
+      height: 2.5rem;
+      padding: 0 0.85rem;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+    }
+    input:focus-visible,
+    button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
+    }
+    .prompt {
+      margin: 0;
+      text-align: center;
+    }
+    .submission-summary {
+      max-height: 0;
+      margin: 0;
+      padding-block: 0;
+      overflow: hidden;
+      text-align: center;
+      font-size: clamp(1.15rem, 4vw, 1.45rem);
+      line-height: 1.08;
+      opacity: 0;
+      transform: translateY(-0.3rem);
+      transition: opacity 0.18s ease, transform 0.18s ease, max-height 0.18s ease, margin 0.18s ease, padding 0.18s ease;
+    }
+    .submission-summary[data-visible="true"] {
+      max-height: 3rem;
+      margin: -0.1rem 0 0;
+      padding-block: 2px;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .mic {
+      width: 5.3rem;
+      aspect-ratio: 1;
+      border: 2px solid var(--line);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .mic:hover {
+      transform: scale(1.02);
+    }
+    .mic[aria-pressed="true"] {
+      background: var(--text);
+      color: #fff;
+      border-color: var(--text);
+    }
+    .mic svg {
+      width: 2rem;
+      height: 2rem;
+      fill: currentColor;
+    }
+    .audio-panel {
+      width: 100%;
+      max-height: 0;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: start;
+      gap: 0.65rem;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(-0.35rem);
+      transition: opacity 0.18s ease, transform 0.18s ease, max-height 0.18s ease;
+    }
+    .audio-panel[data-ready="true"] {
+      max-height: 14rem;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .submit {
+      border: 0;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      padding: 0;
+    }
+    .text-card {
+      width: 13.5rem;
+      min-height: 2.65rem;
+      padding: 0.65rem 0.75rem;
+      border: 2px solid var(--line);
+      background: #efefef;
+      color: var(--text);
+      text-align: left;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .submit {
+      padding: 0.18rem 0.56rem 0.24rem;
+      background: var(--text);
+      color: #fff;
+      line-height: 1;
+      font-size: 0.95rem;
+    }
+    .panel-status {
+      width: 100%;
+      min-height: 0.8rem;
+      margin: -0.25rem 0 0;
+      padding: 3px 0 2px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: left;
+    }
+    .panel-feedback {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-height: 0.95rem;
+    }
+    .spinner {
+      width: 0.8rem;
+      height: 0.8rem;
+      border: 2px solid rgba(17, 17, 17, 0.18);
+      border-top-color: var(--text);
+      border-radius: 50%;
+      opacity: 0;
+      animation: spin 0.7s linear infinite;
+      transition: opacity 0.15s ease;
+    }
+    .spinner[data-visible="true"] {
+      opacity: 1;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    .leaderboard {
+      width: 100%;
+      display: grid;
+      gap: 0.25rem;
+    }
+    .leaderboard-toggle {
+      justify-self: center;
+      border: 0;
+      border-bottom: 2px solid var(--line);
+      background: transparent;
+      padding: 0 1.35rem 0.08rem 0;
+      font-size: clamp(1.3rem, 5vw, 1.65rem);
+      color: var(--text);
+      cursor: pointer;
+      position: relative;
+    }
+    .leaderboard-toggle::after {
+      content: "";
+      position: absolute;
+      right: 0.2rem;
+      top: 42%;
+      width: 0.62rem;
+      height: 0.62rem;
+      border-right: 2px solid var(--text);
+      border-bottom: 2px solid var(--text);
+      transform: translateY(-50%) rotate(45deg);
+      pointer-events: none;
+      transition: transform 0.15s ease;
+    }
+    .leaderboard-toggle[aria-expanded="true"]::after {
+      transform: translateY(-15%) rotate(225deg);
+    }
+    .leaderboard-panel {
+      border: 2px solid var(--line);
+      background: #fff;
+      display: none;
+      max-height: min(16rem, 38dvh);
+      overflow-y: auto;
+    }
+    .leaderboard-panel[data-open="true"] {
+      display: block;
+    }
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: start;
+      gap: 0.45rem;
+      padding: 0.65rem 0.7rem;
+      border-top: 2px solid var(--line);
+    }
+    .leaderboard-row:first-child {
+      border-top: 0;
+    }
+    .leaderboard-name {
+      min-width: 5.9rem;
+      font-size: 0.95rem;
+      padding-top: 0.55rem;
+    }
+    .leaderboard-score {
+      display: block;
+      margin-top: 0.35rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    .leaderboard-empty {
+      padding: 1rem 0.85rem;
+      text-align: center;
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .leaderboard-text {
+      width: 12.9rem;
+    }
+    @media (max-width: 430px), (max-height: 900px) {
+      main {
+        width: min(100%, 21.5rem);
+        padding-top: 1.5rem;
+        gap: 0.9rem;
+      }
+      h1 {
+        font-size: clamp(2.15rem, 9.5vw, 2.8rem);
+      }
+      .name-row {
+        gap: 0.6rem;
+      }
+      .name-row label {
+        font-size: 1.08rem;
+      }
+      .submission-summary {
+        font-size: 1.1rem;
+      }
+      .mic {
+        width: 4.9rem;
+      }
+      .mic svg {
+        width: 1.85rem;
+        height: 1.85rem;
+      }
+      .leaderboard-toggle {
+        font-size: 1.2rem;
+      }
+      .text-card {
+        width: 12.25rem;
+      }
+      .leaderboard-text {
+        width: 11.7rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>FunnAI</h1>
+    <div class="name-row">
+      <label for="name">Name:</label>
+      <input id="name" name="name" type="text" autocomplete="name">
+    </div>
+    <p id="nameNote" class="name-note" data-visible="false" aria-live="polite"></p>
+    <p id="prompt" class="prompt">Tell a joke!</p>
+    <button id="mic" class="mic" type="button" aria-pressed="false" aria-label="Start recording">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a1 1 0 0 1 2 0 7 7 0 0 1-6 6.92V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-2.08A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z"/>
+      </svg>
+    </button>
+    <p id="submissionSummary" class="submission-summary" data-visible="false" aria-live="polite">
+      Your joke is a <span id="scoreValue">{score}</span>/100 and ranked <span id="rankValue">{rank}</span> out of <span id="totalValue">{total}</span>
+    </p>
+    <div id="audioPanel" class="audio-panel" data-ready="false" data-playing="false">
+      <div>
+        <div id="transcriptCard" class="text-card" aria-live="polite"></div>
+        <div class="panel-feedback">
+          <span id="transcriptSpinner" class="spinner" data-visible="false" aria-hidden="true"></span>
+          <p id="panelStatus" class="panel-status"></p>
+        </div>
+      </div>
+      <button id="submitButton" class="submit" type="button">Submit</button>
+    </div>
+    <section class="leaderboard" aria-label="Top jokes">
+      <button id="leaderboardToggle" class="leaderboard-toggle" type="button" aria-expanded="false" aria-controls="leaderboardPanel">
+        Top 10 of all time
+      </button>
+      <div id="leaderboardPanel" class="leaderboard-panel" data-open="false"></div>
+    </section>
+  </main>
+  <script>
+    const nameInput = document.getElementById("name");
+    const nameNote = document.getElementById("nameNote");
+    const mic = document.getElementById("mic");
+    const prompt = document.getElementById("prompt");
+    const submissionSummary = document.getElementById("submissionSummary");
+    const audioPanel = document.getElementById("audioPanel");
+    const transcriptCard = document.getElementById("transcriptCard");
+    const transcriptSpinner = document.getElementById("transcriptSpinner");
+    const panelStatus = document.getElementById("panelStatus");
+    const submitButton = document.getElementById("submitButton");
+    const leaderboardToggle = document.getElementById("leaderboardToggle");
+    const leaderboardPanel = document.getElementById("leaderboardPanel");
+    const scoreValue = document.getElementById("scoreValue");
+    const rankValue = document.getElementById("rankValue");
+    const totalValue = document.getElementById("totalValue");
+    let mediaRecorder, stream;
+    let recording = false, hasTranscript = false, hasSubmitted = false, transcript = "";
+    let transcribing = false;
+    let analysis = { classification: null, funniness_score: null };
+    let leaderboardResults = [];
+
+    // Surface short validation and backend messages near the username field.
+    const setNameNote = text => {
+      nameNote.textContent = text;
+      nameNote.dataset.visible = !!text;
+    };
+    // Swap between the first-joke and follow-up-joke prompt copy.
+    const syncPrompt = name => {
+      const lead = hasSubmitted ? "Tell another joke" : "Tell a joke";
+      prompt.textContent = name ? `${lead} ${name}!` : `${lead}!`;
+    };
+    // Keep the microphone button visuals synced with recording state.
+    const setRecording = on => {
+      mic.setAttribute("aria-pressed", on);
+      mic.setAttribute("aria-label", on ? "Stop recording" : "Start recording");
+    };
+    // Expand the transcript card while audio is being processed or once text exists.
+    const syncTranscriptPanel = () => {
+      audioPanel.dataset.ready = hasTranscript || transcribing ? "true" : "false";
+      transcriptSpinner.dataset.visible = transcribing ? "true" : "false";
+    };
+    // Update the transcript preview and its status line together.
+    const setTranscript = (text, status = "") => {
+      transcript = text.trim();
+      transcriptCard.textContent = transcript || "Your transcript will appear here.";
+      panelStatus.textContent = status;
+      hasTranscript = !!transcript;
+      syncTranscriptPanel();
+    };
+    // Escape dynamic strings before they are inserted into leaderboard markup.
+    const escapeHtml = text => String(text ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[char]);
+    // Render only the first ten ranked results returned by the backend.
+    const renderLeaderboard = (results = leaderboardResults) => {
+      const saved = results.slice(0, 10);
+      if (!saved.length) {
+        leaderboardPanel.innerHTML = `
+          <div class="leaderboard-empty">
+            Top-ranked jokes will appear here once submissions are saved.
+          </div>
+        `;
+        return;
+      }
+      leaderboardPanel.innerHTML = saved.map(({ username, text, funniness_score }, index) => `
+        <div class="leaderboard-row">
+          <div class="leaderboard-name">${index + 1}. ${escapeHtml(username)}:</div>
+          <div class="text-card leaderboard-text">${escapeHtml(text)}<span class="leaderboard-score">Score: ${Number.isFinite(Number(funniness_score)) ? Number(funniness_score) : "-"}</span></div>
+        </div>
+      `).join("");
+    };
+    // Toggle the leaderboard panel open and closed from one place.
+    const setLeaderboardOpen = on => {
+      leaderboardToggle.setAttribute("aria-expanded", on ? "true" : "false");
+      leaderboardPanel.dataset.open = on ? "true" : "false";
+    };
+    // Show the post-submit ranking message only when a joke was accepted.
+    const setSubmissionSummary = on => {
+      submissionSummary.dataset.visible = on ? "true" : "false";
+    };
+    // Clear any stale transcript state before the next recording round.
+    const resetTranscript = () => {
+      transcribing = false;
+      analysis = { classification: null, funniness_score: null };
+      setTranscript("", "");
+      transcriptCard.textContent = "Your transcript will appear here.";
+    };
+    // Match the backend JSON contract exactly when sending a finished joke.
+    const getSubmissionPayload = (name, text, result = {}) => ({
+      text,
+      username: name,
+      classification: Number.isFinite(result.classification) ? result.classification : null,
+      funniness_score: Number.isFinite(result.funniness_score) ? result.funniness_score : null,
+    });
+    // Pull the ranked joke list from the backend whenever the leaderboard opens.
+    const refreshLeaderboard = async () => {
+      try {
+        const response = await fetch("/api/analysis");
+        if (!response.ok) throw new Error("load failed");
+        const result = await response.json();
+        leaderboardResults = Array.isArray(result.results) ? result.results : [];
+        renderLeaderboard(leaderboardResults);
+        return leaderboardResults;
+      } catch {
+        leaderboardResults = [];
+        renderLeaderboard([]);
+        return [];
+      }
+    };
+    // Submit the final transcript and metadata after the user confirms it.
+    const submitJson = async payload => {
+      try {
+        const response = await fetch("/api/analysis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error("submit failed");
+        const result = await response.json();
+        return {
+          status: result.status,
+          message: result.message,
+          data: result.data || payload,
+          rank: result.rank,
+          total: result.total,
+        };
+      } catch {
+        return null;
+      }
+    };
+    // Release the microphone track once recording is finished or canceled.
+    const stopStream = () => {
+      stream?.getTracks().forEach(track => track.stop());
+      stream = null;
+    };
+    // Send the in-memory recording to the backend for transcription and scoring.
+    const transcribeAudio = async blob => {
+      const formData = new FormData();
+      formData.append("joke", blob, "joke.webm");
+      transcribing = true;
+      transcriptCard.textContent = "Transcribing your joke...";
+      panelStatus.textContent = "Transcribing...";
+      syncTranscriptPanel();
+      try {
+        const response = await fetch("/api/analysis", {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) throw new Error("transcription failed");
+        const result = await response.json();
+        transcribing = false;
+        analysis = {
+          classification: Number(result.data?.classification),
+          funniness_score: Number(result.data?.funniness_score),
+        };
+        setTranscript(result.data?.text || "", "Transcript ready to submit.");
+      } catch {
+        transcribing = false;
+        resetTranscript();
+        setNameNote("Transcription failed. Try again.");
+      }
+    };
+
+    // Keep prompt text and validation messages current while the user types.
+    nameInput.addEventListener("input", () => {
+      syncPrompt(nameInput.value.trim());
+      setNameNote("");
+      if (!recording) setSubmissionSummary(false);
+    });
+
+    // Use one button to start recording, stop recording, and kick off transcription.
+    mic.addEventListener("click", async () => {
+      setNameNote("");
+      setSubmissionSummary(false);
+      if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+        setNameNote("Audio recording is not supported in this browser.");
+        return;
+      }
+      if (!recording) {
+        resetTranscript();
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const chunks = [];
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = event => {
+            if (event.data.size) chunks.push(event.data);
+          };
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/webm" });
+            stopStream();
+            await transcribeAudio(audioBlob);
+          };
+          recording = true;
+          setRecording(true);
+          panelStatus.textContent = "Recording...";
+          mediaRecorder.start();
+        } catch {
+          stopStream();
+          setNameNote("Microphone permission is required.");
+          setRecording(false);
+          recording = false;
+        }
+        return;
+      }
+      recording = false;
+      setRecording(false);
+      panelStatus.textContent = "Finishing recording...";
+      mediaRecorder?.stop();
+    });
+
+    // Save accepted jokes, but leave rejected transcripts visible for quick retry.
+    submitButton.addEventListener("click", async () => {
+      const name = nameInput.value.trim();
+      if (!name) {
+        setNameNote("Enter a unique username before submitting.");
+        nameInput.focus();
+        return;
+      }
+      if (!transcript) {
+        setNameNote("Record a joke and wait for the transcript before submitting.");
+        return;
+      }
+      submitButton.disabled = true;
+      panelStatus.textContent = "Submitting...";
+      const payload = getSubmissionPayload(name, transcript, analysis);
+      const remote = await submitJson(payload);
+      if (!remote?.data) {
+        submitButton.disabled = false;
+        panelStatus.textContent = "";
+        setNameNote("Submission failed. Check the backend and try again.");
+        return;
+      }
+      if (remote.status === "rejected") {
+        submitButton.disabled = false;
+        setSubmissionSummary(false);
+        panelStatus.textContent = remote.message || "That wasn't a joke.";
+        return;
+      }
+      scoreValue.textContent = Number(remote.data?.funniness_score ?? payload.funniness_score) || 0;
+      rankValue.textContent = remote.rank || 1;
+      totalValue.textContent = remote.total || 1;
+      hasSubmitted = true;
+      recording = false;
+      setNameNote("");
+      setRecording(false);
+      setSubmissionSummary(true);
+      resetTranscript();
+      panelStatus.textContent = "";
+      syncPrompt(name);
+      await refreshLeaderboard();
+      submitButton.disabled = false;
+    });
+    // Lazy-load leaderboard data only when the user opens the panel.
+    leaderboardToggle.addEventListener("click", () => {
+      const opening = leaderboardPanel.dataset.open !== "true";
+      setLeaderboardOpen(opening);
+      if (opening) refreshLeaderboard();
+    });
+
+    // Seed the initial empty state from backend data when the page loads.
+    resetTranscript();
+    refreshLeaderboard();
+  </script>
+</body>
+</html>

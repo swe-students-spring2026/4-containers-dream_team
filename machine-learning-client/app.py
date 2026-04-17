@@ -13,6 +13,8 @@ def analyze_joke():
     if "joke" not in request.files:
         return jsonify({"error": "joke not passed through"}), 400
     audio = request.files["joke"]
+    if audio.filename == "":
+        return jsonify({"error": "joke audio not saved properly"}), 400
     text = vtt(audio)
     classification, score = analyze_text(text)
     return (

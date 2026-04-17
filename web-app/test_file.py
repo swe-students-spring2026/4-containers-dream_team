@@ -30,15 +30,19 @@ def test_post_analysis(client):
     fake_response.status_code = 200
     fake_response.json.return_value = {
         "text": "funny joke",
-        "classification": "funny",
+        "classification": 1,
         "score": 10,
     }
 
     fake_insert = Mock()
     fake_insert.inserted_id = "123"
+    fake_cursor = Mock()
+    fake_cursor.sort.return_value = [{"_id": "123"}]
 
     with patch("app.requests.post", return_value=fake_response), patch(
         "app.collection.insert_one", return_value=fake_insert
+    ), patch("app.collection.find", return_value=fake_cursor), patch(
+        "app.collection.count_documents", return_value=1
     ):
 
         res = client.post(
@@ -55,7 +59,10 @@ def test_post_analysis(client):
 
 def test_get_analysis(client):
     """Test that retrieving analysis data returns HTTP 200."""
-    with patch("app.collection.find", return_value=[]):
+    fake_cursor = Mock()
+    fake_cursor.sort.return_value = []
+
+    with patch("app.collection.find", return_value=fake_cursor):
         res = client.get("/api/analysis")
     assert res.status_code == 200
 
