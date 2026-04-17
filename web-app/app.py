@@ -23,10 +23,6 @@ app = Flask(__name__)
 def dashboard():
     """
     Render the main dashboard page.
-
-    NOTE:
-    This is a placeholder frontend route.
-    Replace "dashboard.html" once frontend implementation is ready.
     """
 
     return render_template("dashboard.html")

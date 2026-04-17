@@ -7,15 +7,15 @@ from voice_to_text import voice_to_text as vtt
 app = Flask(__name__)
 
 
-@app.route("/process", methods=["GET"])
+@app.route("/process", methods=["POST"])
 def analyze_joke():
     """Takes joke passed through front end driver and analyzes joke before returning."""
-    if "files" not in request.files:
-        return jsonify({"error": "joke not passed through"}), 404
-    audio = request.files["files"]
+    if "joke" not in request.files:
+        return jsonify({"error": "joke not passed through"}), 400
+    audio = request.files["joke"]
     text = vtt(audio)
     classification, score = analyze_text(text)
-    return jsonify({"text": text, "classification": classification, "score": score})
+    return jsonify({"text": text, "classification": classification, "score": score}), 200
 
 
 if __name__ == "__main__":
