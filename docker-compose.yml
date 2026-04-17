@@ -9,12 +9,20 @@ services:
     build:
       context: ./machine-learning-client
     container_name: joke-ml-client
+<<<<<<< HEAD
     depends_on:
       - mongodb
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       VTT_API_KEY: ${VTT_API_KEY}
 
+=======
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mongodb
+  
+>>>>>>> 8d448b98c9384f4da61183540614ea7fa50eee08
   web-app:
     build:
       context: ./web-app
@@ -26,6 +34,12 @@ services:
     depends_on:
       - mongodb
       - machine-learning-client
+<<<<<<< HEAD
 
 volumes:
   mongo_data:
+=======
+  
+volumes:
+  mongo_data:
+>>>>>>> 8d448b98c9384f4da61183540614ea7fa50eee08

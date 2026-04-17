@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <h2>Joke Recorder</h2>
+
+        <input id="name" placeholder="Your name" />
+        <br/><br/>
+
+        <button onclick="startRecording()">Start</button>
+        <button onclick="stopRecording()">Stop</button>
+        <br/><br/>
+
+        <audio id="audio" controls></audio>
+        <br/><br/>
+
+        <button onclick="sendJoke()">Send Joke</button>
+
+        <p id="status"></p>
+
+        <h3>Top Jokes</h3>
+        <button onclick="loadJokes()">Refresh</button>
+        <ul id="list"></ul>
+
+        <script>
+            let mediaRecorder;
+            let chunks = [];
+            let blob;
+
+            async function startRecording() {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                chunks = [];
+                mediaRecorder.ondataavailable = e => chunks.push(e.data);
+
+                mediaRecorder.onstop = () => {
+                    blob = new Blob(chunks, { type: "audio/webm" });
+                    document.getElementById("audio").src = URL.createObjectURL(blob);
+                };
+
+                mediaRecorder.start();
+                setStatus("Recording...");
+            }
+
+            function stopRecording() {
+                mediaRecorder.stop();
+                setStatus("Stopped");
+            }
+
+            async function sendJoke() {
+                const name = document.getElementById("name").value;
+
+                const formData = new FormData();
+                formData.append("username", name);
+                formData.append("joke", blob, "joke.webm");
+
+                const res = await fetch("/api/analysis", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    setStatus("Error: " + JSON.stringify(data));
+                    return;
+                }
+
+                setStatus("Score: " + data.data.funniness_score);
+                loadJokes();
+            }
+
+            async function loadJokes() {
+                const res = await fetch("/api/analysis");
+                const data = await res.json();
+
+                const list = document.getElementById("list");
+                list.innerHTML = "";
+
+                data.results
+                    .sort((a, b) => b.funniness_score - a.funniness_score)
+                    .slice(0, 10)
+                    .forEach(j => {
+                    const li = document.createElement("li");
+                    li.textContent = j.username + " (" + j.funniness_score + "): " + (j.text || "");
+                    list.appendChild(li);
+                    });
+            }
+
+            function setStatus(msg) {
+                document.getElementById("status").textContent = msg;
+            }
+
+            loadJokes();
+        </script>
+    </body>
+</html>

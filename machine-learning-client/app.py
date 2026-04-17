@@ -11,6 +11,7 @@ app = Flask(__name__)
 def analyze_joke():
     """Takes joke passed through front end driver and analyzes joke before returning."""
 <<<<<<< HEAD
+<<<<<<< HEAD
 
     if "joke" not in request.files:
         return jsonify({"error": "joke not passed through"}), 400
@@ -33,6 +34,17 @@ def analyze_joke():
     classification, score = analyze_text(text)
     
     return jsonify({"text": text, "classification": classification, "score": score})
+=======
+    if "joke" not in request.files:
+        return jsonify({"error": "joke not passed through"}), 400
+    audio = request.files["joke"]
+    text = vtt(audio)
+    classification, score = analyze_text(text)
+    return (
+        jsonify({"text": text, "classification": classification, "score": score}),
+        200,
+    )
+>>>>>>> 8d448b98c9384f4da61183540614ea7fa50eee08
 
 
 if __name__ == "__main__":
