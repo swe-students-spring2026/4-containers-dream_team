@@ -20,11 +20,11 @@ To run this system, you need to configure your environment and initialize the da
 
 The application requires several environment variables to handle API integrations and server settings.
 
-    1. Create a .env file in the root directory and the machine-learning-client directory.
+    1. Create a .env file in the root directory following the .env.example instructions.
 
     2. Copy the variables from .env.example
 
-## Docker initialization 
+## Docker initialization
 
 1. ```docker compose up —build```
 
