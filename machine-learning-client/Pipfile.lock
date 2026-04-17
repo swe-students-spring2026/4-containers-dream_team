@@ -34,21 +34,12 @@
         },
         "assemblyai": {
             "hashes": [
-<<<<<<< HEAD
-                "sha256:3c33b8ed965a3d21bfef8c11db4f3cd655e3ee03ac407dcedc6a0e439e6da3bc",
-                "sha256:430080afd2b24bfc7978504025afa3c5bc35bdcbfc2688f6c8bd710c2505f7b9"
-            ],
-            "index": "pypi",
-            "markers": "python_version >= '3.8'",
-            "version": "==0.61.0"
-=======
                 "sha256:10487dfbeda1fe0787b673cbf947162d43ce652d62be9c542d37ea53e8a04e7a",
                 "sha256:d91484940932197d02dc39f9f43b3f88f93c15b47ee3530dc0b65ea05369b99e"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
             "version": "==0.61.1"
->>>>>>> 8d448b98c9384f4da61183540614ea7fa50eee08
         },
         "astroid": {
             "hashes": [

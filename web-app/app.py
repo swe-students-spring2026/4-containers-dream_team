@@ -54,16 +54,10 @@ def sorted_results(collection):
 
 @app.route("/")
 def dashboard():
-<<<<<<< HEAD
     """Serve the frontend page."""
 
     # Makes sure that the URL route points to the homepage as detailed in index.html
     return send_from_directory(ROOT, "index.html")
-=======
-    """
-    Render the main dashboard page.
-    """
->>>>>>> 8d448b98c9384f4da61183540614ea7fa50eee08
 
 
 def save_submission(data):
@@ -159,66 +153,12 @@ def transcribe_upload():
 
 @app.route("/api/analysis", methods=["POST"])
 def add_analysis():
-<<<<<<< HEAD
     """Accept either an uploaded joke audio file or a JSON joke payload."""
 
     # JSON requests are final submissions; multipart requests are live recordings.
     if request.is_json:
         return save_submission(request.get_json(force=True) or {})
     return transcribe_upload()
-=======
-    """
-    Accepts audio input, runs ML analysis, and returns classification + score.
-    """
-    username = request.form.get("username", "").strip() or "Anonymous"
-
-    if "joke" not in request.files:
-        return jsonify({"error": "missing input"}), 400
-
-    joke_file = request.files["joke"]
-
-    if joke_file.filename == "":
-        return jsonify({"error": "empty joke file"}), 400
-
-    # Run joke to machine-learning-client where it is analyzed
-    try:
-        # send uploaded audio to ML service
-        files = {
-            "joke": (
-                joke_file.filename,
-                joke_file.stream,
-                joke_file.mimetype or "audio/webm",
-            )
-        }
-
-        response = requests.post(
-            "http://machine-learning-client:5001/process",
-            files=files,
-            timeout=45,
-        )
-    except requests.RequestException:
-        return jsonify({"error": "machine learning client unavailable"}), 500
-
-    # check it ran correctly
-    if response.status_code != 200:
-        return jsonify({"error": "machine learning client failed"}), 500
-
-    # grab results from response
-    result = response.json()
-
-    # Build database record (to be saved later)
-    record = {
-        "text": result.get("text", ""),
-        "username": username,
-        "classification": result.get("classification", "unknown"),
-        "funniness_score": result.get("score", 0),
-    }
-
-    insert_result = collection.insert_one(record)
-    record["_id"] = str(insert_result.inserted_id)
-
-    return jsonify({"status": "success", "data": record}), 201
->>>>>>> 8d448b98c9384f4da61183540614ea7fa50eee08
 
 
 @app.route("/api/analysis", methods=["GET"])
