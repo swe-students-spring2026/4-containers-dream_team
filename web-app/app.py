@@ -37,22 +37,31 @@ def add_analysis():
     """
     Accepts audio input, runs ML analysis, and returns classification + score.
     """
-    if "username" not in request.files:
-        return jsonify({"error": "missing username"}), 400
+    username = request.form.get("username", "").strip() or "Anonymous"
+
     if "joke" not in request.files:
         return jsonify({"error": "missing input"}), 400
-    joke = request.files["joke"]
-    username = request.files["username"]
-    if username == "":
-        username = "Anonymous"
+
+    joke_file = request.files["joke"]
+
+    if joke_file.filename == "":
+        return jsonify({"error": "empty joke file"}), 400
 
     # Run joke to machine-learning-client where it is analyzed
-    with open(joke, "rb") as file:
+    try:
+        # send uploaded audio to ML service
+        files = {
+            "joke": (joke_file.filename, joke_file.stream, joke_file.mimetype or "audio/webm")
+        }
+
         response = requests.post(
             "http://machine-learning-client:5001/process",
-            files={"joke": file},
+            files=files,
             timeout=45,
         )
+    except requests.RequestException:
+        return jsonify({"error": "machine learning client unavailable"}), 500
+
 
     # check it ran correctly
     if response.status_code != 200:
@@ -63,13 +72,14 @@ def add_analysis():
 
     # Build database record (to be saved later)
     record = {
-        "text": result.text,
+        "text": result.get("text", ""),
         "username": username,
-        "classification": result.classification,
-        "funniness_score": result.score,
+        "classification": result.get("classification", "unknown"),
+        "funniness_score": result.get("score", 0),
     }
 
-    collection.insert_one(record)
+    insert_result = collection.insert_one(record)
+    record["_id"] = str(insert_result.inserted_id)
 
     return jsonify({"status": "success", "data": record}), 201
 
